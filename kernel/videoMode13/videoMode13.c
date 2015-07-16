@@ -338,14 +338,13 @@
 							    	wy-=Screen.scrollHeight;
 							    }
                             #endif
+
 							if(wx>=VRAM_TILES_H)wx-=VRAM_TILES_H; //should always be 32
 
 							#if SCROLLING == 0
 								ramPtr=(wy*VRAM_TILES_H)+wx;
 							#else
-
 								ramPtr=((wy>>3)*256)+(wx*8)+(wy&7);	
-
 							#endif
 
 							bt=vram[ramPtr];						
@@ -365,11 +364,11 @@
 							}
 				
 							if(bt<RAM_TILES_COUNT){				
-#if EXTENDED_PALETTE == 1
-								BlitSpriteExtended(i,bt,(y<<8)+x,(dy<<8)+dx);						
-#else
-								BlitSprite3bpp(i,bt,(y<<8)+x,(dy<<8)+dx);						
-#endif
+								#if EXTENDED_PALETTE == 1
+									BlitSpriteExtended(i,bt,(y<<8)+x,(dy<<8)+dx);						
+								#else
+									BlitSprite3bpp(i,bt,(y<<8)+x,(dy<<8)+dx);						
+								#endif
 							}
 
 					//	}
@@ -380,9 +379,9 @@
 			}//	if(bx<(SCREEN_TILES_H*TILE_WIDTH))		
 		}
 
-		//restore vram to flash tilesso main program 
-		//doesn't seen ram tiles index
-		//ramtiles indexes will be set back during rendering prolog
+		//restore vram to flash tiles so the main program 
+		//doesn't see ram tiles indexes.
+		//ramtiles indexes will be set back during rendering prolog.
 		RestoreBackground();
 	}
 

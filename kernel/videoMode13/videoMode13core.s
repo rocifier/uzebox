@@ -444,24 +444,12 @@ TIMER1_OVF_vect:
 ; r22=RAM tile index
 ;************************************
 CopyTileToRam:
-/*
-	src=tile_table_lo+((bt&0x7f)*64);
-	dest=ram_tiles+(free_tile_index*TILE_HEIGHT*TILE_WIDTH);
-
-	ram_tiles_restore[free_tile_index].addr=ramPtr;//(by*VRAM_TILES_H)+bx+x;
-	ram_tiles_restore[free_tile_index].tileIndex=bt;
-
-	for(j=0;j<64;j++){
-		px=pgm_read_byte(src++);
-		*dest++=px;
-	}
-*/
 	
 	ldi r18,TILE_HEIGHT*TILE_WIDTH/2	;tile size in bytes
 
 	;compute source adress
-	ldi ZL,0;tile_table_lo
-	ldi ZH,0;tile_table_hi
+	clr ZL	;tile_table_lo
+	clr ZH	;tile_table_hi
 	
 	mul r24,r18
 	add ZL,r0

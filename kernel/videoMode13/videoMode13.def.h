@@ -136,3 +136,9 @@
 //the number of unusable ramtiles to skip 
 //the register file and the IO registers
 #define REG_IO_OFFSET 8
+
+//maximum possible ramtiles. The limit is
+//controller by the cycles available in the
+//rendering phase prolog to restore the
+//ramtiles indexes
+#define MAX_RAMTILES 90
