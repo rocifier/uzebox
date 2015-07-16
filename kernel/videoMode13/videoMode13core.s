@@ -144,7 +144,7 @@ sub_video_mode13:
 	ldi YH,hi8(vram)
 
 	lds r18,free_tile_index
-	ldi r19,90		;maximum possible ramtiles
+	ldi r19,MAX_RAMTILES		;maximum possible ramtiles
 	sub r19,r18
 
 	cpi r18,0
@@ -396,6 +396,7 @@ ramloop:
    out VIDEO,r16   	;output pixel 2
    ld r16,X      	;LUT pixel 3
    mul r17,r15      ;tile index * 32
+   nop
       
    out VIDEO,r16   	;output pixel 3
    ldd XL,Z+2      	;load ram pixels 4,5
