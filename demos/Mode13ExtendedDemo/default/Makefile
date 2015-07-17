@@ -36,8 +36,6 @@ ASMFLAGS += -x assembler-with-cpp -Wa,-gdwarf2
 ## Linker flags
 LDFLAGS = $(COMMON)
 LDFLAGS += -Wl,-Map=$(GAME).map 
-##LDFLAGS += -Wl,-nostartfiles
-##LDFLASG += -Wl,-nodefaultlibs
 LDFLAGS += -Wl,-gc-sections 
 LDFLAGS += -Wl,--section-start,.noinit=0x800100 
 LDFLAGS += -Wl,--section-start,.data=0x800948 

@@ -53,6 +53,7 @@
 .global GetTile
 .global palette
 .global SetPaletteColorAsm
+.global tile_bank
 
 ;Screen Sections Struct offsets
 #define scrollX				0
@@ -105,6 +106,8 @@
 	tile_table_lo:			.byte 1
 	tile_table_hi:			.byte 1
 	font_tile_index:		.byte 1 
+
+	tile_bank:				.byte 1
 
 	overlay_vram:
 	#if SCROLLING == 0 && OVERLAY_LINES >0
@@ -316,12 +319,13 @@ render_tile_line:
 	sts _SFR_MEM_ADDR(TCNT1L),r16
 	sei
 
+	lds r14,tile_bank
+
 	mov r24,r22	;Y offset in tiles*tile width in bytes (4)
 	lsl r24
 	lsl r24
 	
 	ldi XH,hi8(palette)
-	nop
 	ldi r16,(TILE_HEIGHT*TILE_WIDTH)/2  ;(bytes per tile)
 	mov r15,r16
 	clr r2
@@ -331,11 +335,10 @@ render_tile_line:
 	andi r17,0x7f   ;clear tile index msbit to have both ram/rom tile bases adress at zero	
 	mul r17,r15 	;tile*32	
     add r0,r24    	;add row offset to tile table addr
+	adc r1,r14		;add rom tile bank offset
 	movw ZL,r0
 	
 	lpm XL,Z+       ;load rom pixels 0,1
-	nop	
-	nop
 	brtc ramloop
 	rjmp .
 
@@ -371,51 +374,51 @@ romloop:
 	movw ZL,r0      ;copy next tile address
 
 	out VIDEO,r16   ;output pixel 6
-	add ZL,r24		;add Y tile offset. Cannot overflow in ZH because tile table is aligned to zero.
+	add ZL,r24		;add Y tile offset. 
+	adc ZH,r14		;add rom tile bank offset 
 	lpm XL,Z+       ;load rom pixels 0,1
-  	nop
 	 
 mainloop:
-   out VIDEO,r17	;output pixel 7 (ram & rom)
-   brts romloop
+	out VIDEO,r17	;output pixel 7 (ram & rom)
+	brts romloop
 
 ramloop: 
-   ld XL,-Z			;load ram pixels 0,1
-   ld r16,X+		;LUT pixel 0
-   
-   out VIDEO,r16   	;output pixel 0
-   ld r16,X      	;LUT pixel 1
-   ld r17,Y+      	;next tile
-   bst r17,7      	;set T flag with msbit of tile index. 1=rom, 0=ram tile     
-   
-   out VIDEO,r16   	;output pixel 1
-   ldd XL,Z+1      	;load ram pixels 2,3
-   ld r16,X+      	;LUT pixel 2
-   andi r17,0x7f   	;clear tile index msbit to have both ram/rom tile bases adress at zero
-      
-   out VIDEO,r16   	;output pixel 2
-   ld r16,X      	;LUT pixel 3
-   mul r17,r15      ;tile index * 32
-   nop
-      
-   out VIDEO,r16   	;output pixel 3
-   ldd XL,Z+2      	;load ram pixels 4,5
-   ld r16,X+      	;LUT pixel 4
-   nop
-   
-   out VIDEO,r16   	;output pixel 4
-   ld r16,X      	;LUT pixel 5
-   ldd XL,Z+3      	;load ram pixels 6,7
-   movw ZL,r0      	;copy tile pointer
-   
-   out VIDEO,r16   	;output pixel 5
-   ld r16,X+      	;LUT pixel 6
-   ld r17,X      	;LUT pixel 7
-   add ZL,r24		;add Y tile offset. Cannot overflow in ZH because tile table is aligned to zero.
-   
-   out VIDEO,r16   	;output pixel 6
-   lpm XL,Z+      	;load rom pixels 0,1
-   rjmp mainloop	
+	ld XL,-Z		;load ram pixels 0,1
+	ld r16,X+		;LUT pixel 0
+
+	out VIDEO,r16   ;output pixel 0
+	ld r16,X      	;LUT pixel 1
+	ldd XL,Z+1      ;load ram pixels 2,3
+	nop
+
+	out VIDEO,r16   ;output pixel 1
+	ld r17,Y+      	;next tile
+	bst r17,7      	;set T flag with msbit of tile index. 1=rom, 0=ram tile     
+	ld r16,X+      	;LUT pixel 2
+  
+	out VIDEO,r16   ;output pixel 2
+	andi r17,0x7f   ;clear tile index msbit to have both ram/rom tile bases adress at zero
+	ld r16,X      	;LUT pixel 3
+	mul r17,r15     ;tile index * 32
+     
+	out VIDEO,r16   ;output pixel 3
+	ldd XL,Z+2      ;load ram pixels 4,5
+	ld r16,X+      	;LUT pixel 4
+	add r0,24		;add Y tile offset. 
+
+	out VIDEO,r16   ;output pixel 4
+	ld r16,X      	;LUT pixel 5
+	ldd XL,Z+3      ;load ram pixels 6,7
+	adc r1,r14		;add rom tile bank offset 
+
+	out VIDEO,r16   ;output pixel 5
+	ld r16,X+      	;LUT pixel 6
+	ld r17,X      	;LUT pixel 7
+	movw ZL,r0      ;copy tile pointer
+
+	out VIDEO,r16   ;output pixel 6
+	lpm XL,Z+      	;load rom pixels 0,1
+	rjmp mainloop	
 
 
 ;end of render line   
@@ -449,8 +452,8 @@ CopyTileToRam:
 	ldi r18,TILE_HEIGHT*TILE_WIDTH/2	;tile size in bytes
 
 	;compute source adress
-	clr ZL	;tile_table_lo
-	clr ZH	;tile_table_hi
+	clr ZL				;tile_table_lo
+	lds ZH,tile_bank	;tile_table_hi
 	
 	mul r24,r18
 	add ZL,r0
@@ -994,6 +997,9 @@ SetFont:
 	lds r21,font_tile_index
 	add r20,21
 	rjmp SetTile	
+
+
+
 
 ;***********************************
 ; SET TILE 8bit mode

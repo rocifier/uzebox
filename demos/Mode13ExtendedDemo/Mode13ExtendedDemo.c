@@ -40,6 +40,9 @@ Demo for paletted video mode 13
 #include "data/graphics.inc.h"
 #include "data/sprites.inc.h"
 
+extern u8 tile_bank;
+
+
 typedef struct
 {
 	u8 x, y;
@@ -127,12 +130,14 @@ int main(){
 
 	SetSpriteVisibility(true);
 
+	tile_bank=0x00;
+
 	unsigned char c;
 	for(int y=0;y<28;y++){
 		for(int x=0;x<VRAM_TILES_H;x++){
 			c=pgm_read_byte(&graphicsMap[(y*GRAPHICSMAP_WIDTH)+x+2]);
 			//SetTile(x,y+1,c+4);
-			vram[(y*VRAM_TILES_H)+x]=0x80+(c+4);
+			vram[(y*VRAM_TILES_H)+x]=0x80+(c+0);
 		}	
 	}
 
@@ -146,12 +151,18 @@ int main(){
 
 	u16 i=0;
 	while(1){
-		SetPaletteColor(1, (u8)(i >> 4));
+		//SetPaletteColor(1, (u8)(i >> 4));
 		i++;
 		
 		for(int n = 0; n < NUM_MARIOS; n++)
 		{
 			setup_sprite(&marios[n], n * 4);
+		}
+
+
+		if(ReadJoypad(0)==BTN_A){
+			while(ReadJoypad(0)!=0);
+			tile_bank ^= 0x10;
 		}
 			
 		WaitVsync(1);
