@@ -58,7 +58,8 @@
 	#define FILL_DELAY ((CYCLES_PER_PIXELS*TILE_WIDTH)*(30-VRAM_TILES_H))/2 //use to generate filler cycles when VRAM_TILES_H<30
 #else
 	#define VRAM_TILES_H 32
-	#define SCREEN_TILES_H 28
+	#define SCREEN_TILES_H 30
+	#define FILL_DELAY 0
 #endif
 
 #ifndef SCREEN_TILES_V
@@ -131,11 +132,6 @@
 	#define MAX_PALETTE_COLORS 8
 	#define TRANSPARENT_COLOR 0x1
 #endif
-
-//ramtiles table base is at 0x0000 
-//the number of unusable ramtiles to skip 
-//the register file and the IO registers
-#define REG_IO_OFFSET 8
 
 //maximum possible ramtiles. The limit is
 //controller by the cycles available in the

@@ -186,7 +186,7 @@ bool process(){
 
 	Image image;
 	image.buffer=loadImage();
-	int skipTiles=0;	//mode 13 needs to have the first 4 tiles removed
+
 
 	if(image.buffer==NULL){
 		return false;
@@ -260,7 +260,6 @@ bool process(){
 
 
 	vector<unsigned char*> uniqueTiles;
-	//int imageTiles[horizontalTiles*verticalTilesetHeight];
 	int count=0;
 
 	//build tile file from tiles
@@ -278,24 +277,14 @@ bool process(){
     fprintf(tf," * Output format: %s\n",xform.outputType);
     fprintf(tf," */\n");
 
-
-    //todo: refactor in a better way
-    if(strstr(xform.outputType,"mode13-extended")){
-    	//load 4 dummy tiles that will be skipped later
-    	skipTiles=4;
-    }
-
     //build unique tileset
 	for(int v=0; v<verticalTilesetHeight; v++){
 		for(int h=0; h<horizontalTiles; h++){
-
-			if(v==0 && h==0) h=skipTiles;
 
 			unsigned char* tile=getTileAt(h,v,&image);
 
 			if(xform.duplicateTiles==keep){
 				uniqueTiles.push_back(tile);
-			//	imageTiles[count]=uniqueTiles.size()-1;
 			}else{
 				int refIndex=-1;
 				//check if tile already exist
@@ -376,7 +365,7 @@ bool process(){
 						return false;
 					}
 
-					fprintf(tf,"0x%x",index+skipTiles);
+					fprintf(tf,"0x%x",index);
 
 
 					c++;
@@ -423,7 +412,7 @@ bool process(){
 		    fprintf(tf,"#define %s_SIZE %i\n",toUpperCase(xform.tilesVarName),uniqueTiles.size());
 
 			if(xform.isBackgroundTiles){
-				fprintf(tf,"const char vector_table_filler[] __attribute__ ((section (\".vectors\")))={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};\n");
+			    fprintf(tf,"const char vector_table_filler[144] __attribute__ ((section (\".vectors\")))={};\n");
 				fprintf(tf,"const char %s[] __attribute__ ((section (\".vectors\")))={\n",xform.tilesVarName);
 			}else{
 				fprintf(tf,"const char %s[] PROGMEM ={\n",xform.tilesVarName);
@@ -544,7 +533,7 @@ bool process(){
 			
 			/*Export tileset in palette extended pixel format*/
 		    fprintf(tf,"#define %s_SIZE %i\n",toUpperCase(xform.tilesVarName),uniqueTiles.size());			
-			fprintf(tf,"const char vector_table_filler[] __attribute__ ((section (\".vectors\")))={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};\n");
+		    fprintf(tf,"const char vector_table_filler[144] __attribute__ ((section (\".vectors\")))={};\n");
 		    fprintf(tf,"const char %s[] __attribute__ ((section (\".vectors\")))={\n",xform.tilesVarName);
 	
 			int c=0,t=0;

@@ -70,12 +70,8 @@
 
 	u16 src;u8* dest;u8 spix,dpix;
 	void BlitSprite3bpp(u8 sprNo,u8 ramTileIndex,u16 yx,u16 dydx){
-//		u8 dy=dydx>>8;
-//		u8 dx=dydx &0xff;
-		u8 flags=sprites[sprNo].flags;
-		//u8 spix,dpix
+		u8 flags=sprites[sprNo].flags;		
 		u8 x2,y2;
-//		s8 step=1,srcXdiff;
 
 		src=(sprites[sprNo].tileIndex*TILE_HEIGHT*TILE_WIDTH/2)
 				+sprites_tile_banks[flags>>6];	//add bank adress		

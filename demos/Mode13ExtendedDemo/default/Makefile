@@ -13,8 +13,8 @@ UZEBIN_DIR=../../../bin/
 
 ## Kernel settings
 KERNEL_DIR = ../../../kernel
-KERNEL_OPTIONS  = -DVIDEO_MODE=13 -DINTRO_LOGO=0 -DSCROLLING=0 -DSOUND_MIXER=1
-KERNEL_OPTIONS += -DMAX_SPRITES=14 -DRAM_TILES_COUNT=32 -DSCREEN_TILES_V=28 -DVRAM_TILES_H=30 -DEXTENDED_PALETTE=1
+KERNEL_OPTIONS  = -DVIDEO_MODE=13 -DINTRO_LOGO=0 -DSCROLLING=1 -DSOUND_MIXER=1
+KERNEL_OPTIONS += -DMAX_SPRITES=14 -DRAM_TILES_COUNT=32 -DSCREEN_TILES_V=28 -DEXTENDED_PALETTE=1
 
 
 ## Options common to compile, link and assembly rules
@@ -38,8 +38,8 @@ LDFLAGS = $(COMMON)
 LDFLAGS += -Wl,-Map=$(GAME).map 
 LDFLAGS += -Wl,-gc-sections 
 LDFLAGS += -Wl,--section-start,.noinit=0x800100 
-LDFLAGS += -Wl,--section-start,.data=0x800948 
-
+##LDFLAGS += -Wl,--section-start,.data=0x800948  ##no scrolling
+LDFLAGS += -Wl,--section-start,.data=0x800a00  
 
 
 ## Intel Hex file production flags

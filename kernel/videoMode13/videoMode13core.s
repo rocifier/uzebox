@@ -92,9 +92,10 @@
 		#error RAM_TILES_COUNT must be a multiple of 8
 	#endif
 
-	ram_tiles:				.space RAM_TILES_COUNT*(TILE_HEIGHT*TILE_WIDTH/2)	;1024+256+840=2120=0x848+0x100=0x948
-	palette:				.space 256											
-	vram: 	  				.space VRAM_SIZE 									
+	ram_tiles:				.space RAM_TILES_COUNT*(TILE_HEIGHT*TILE_WIDTH/2)	; 1024									
+	palette:				.space 256											;+256	
+	vram: 	  				.space VRAM_SIZE 									;+1024
+																				;=2304=0x900+0x100=0xa00 (Scrolling)
 
 
 .section .bss
@@ -133,7 +134,7 @@
 sub_video_mode13:
 
 	;wait cycles to align with next hsync
-	WAIT r16,38+14
+	WAIT r16,38+15
 
 
 	;Refresh ramtiles indexes in VRAM 
@@ -153,15 +154,14 @@ sub_video_mode13:
 	cpi r18,0
 	breq no_ramtiles
 	
-	subi r18,-(REG_IO_OFFSET)
-	ldi 16,REG_IO_OFFSET
+	clr 16
 upd_loop:		
 	ld XL,Z+	;load vram offset of ramtile
 	ld XH,Z+
 
 	ld r17,X	;get latest VRAM tile that may have been modified my 
-	st Z+,r17  ;the main program and store it in the restore buffer
-	st X,r16	;write the ramtile index back to vram (adding REG_IO_OFFSET to skip invalid ramtiles)
+	st Z+,r17	;the main program and store it in the restore buffer
+	st X,r16	;write the ramtile index back to vram
 
 	inc r16
 	cp r16,r18
@@ -250,21 +250,18 @@ next_tile_line:
 next_tile_row:
 	clr r22		;current char line			;1	
 
-	adiw YL,VRAM_TILES_H
-	rjmp .
+	;increment vram pointer next row
+	mov r16,YL
+	andi r16,0x7
+	cpi r16,7
+	breq 1f
+	inc YL
+	rjmp 2f
+1:
+	andi YL,0xf8
+	inc YH
+2:
 
-	;clr r0
-	;ldi r19,VRAM_TILES_H
-	;add YL,r19
-	;adc YH,r0
-
-	;dec r24		;overlay done?
-	;brne .+2
-	;movw YL,r8	;main vram
-	;brne .+2
-	;movw r12,r6	;main tile table
-	rjmp .
-	rjmp .
 	nop
 
 	rjmp next_tile_line
@@ -313,15 +310,16 @@ render_tile_line:
 	
 	;Set timer so that it generates an overflow interrupt when
 	;all tiles are rendered
-	ldi r16,lo8(0xffff-(6*8*VRAM_TILES_H)+9-30)
-	ldi r17,hi8(0xffff-(6*8*VRAM_TILES_H)+9-30)
+	ldi r16,lo8(0xffff-(6*8*SCREEN_TILES_H)+9-30)
+	ldi r17,hi8(0xffff-(6*8*SCREEN_TILES_H)+9-30)
 	sts _SFR_MEM_ADDR(TCNT1H),r17
 	sts _SFR_MEM_ADDR(TCNT1L),r16
 	sei
 
-	lds r14,tile_bank
+	lds r18,tile_bank
+	ori r18,1		;set base adress of both ram and rom tiles at 0x100
 
-	mov r24,r22	;Y offset in tiles*tile width in bytes (4)
+	mov r24,r22		;Y offset in tiles*tile width in bytes (4)
 	lsl r24
 	lsl r24
 	
@@ -330,24 +328,24 @@ render_tile_line:
 	mov r15,r16
 	clr r2
 
-    ld r17,Y+     	;load next tile # from VRAM
+    ld r17,Y     	;load first tile # from VRAM
 	bst r17,7		;set T flag with msbit of tile index. 1=rom, 0=ram tile   
 	andi r17,0x7f   ;clear tile index msbit to have both ram/rom tile bases adress at zero	
 	mul r17,r15 	;tile*32	
     add r0,r24    	;add row offset to tile table addr
-	adc r1,r14		;add rom tile bank offset
+	adc r1,r18		;add rom tile bank offset
 	movw ZL,r0
-	
+
 	lpm XL,Z+       ;load rom pixels 0,1
 	brtc ramloop
 	rjmp .
 
 romloop:
 	ld   r16,X+		;LUT pixel 0
-	nop
+	subi YL,-8		;VRAM+8
 
 	out VIDEO,r16	;output pixel 0
-	ld 	r17,Y+		;load next tile index 
+	ld 	r17,Y		;load next tile index from VRAM
 	bst r17,7		;set T flag with msbit of tile index. 1=rom, 0=ram tile   
 	ld 	r16,X		;LUT pixel 1
 
@@ -375,7 +373,7 @@ romloop:
 
 	out VIDEO,r16   ;output pixel 6
 	add ZL,r24		;add Y tile offset. 
-	adc ZH,r14		;add rom tile bank offset 
+	adc ZH,r18		;add rom tile bank offset 
 	lpm XL,Z+       ;load rom pixels 0,1
 	 
 mainloop:
@@ -389,10 +387,10 @@ ramloop:
 	out VIDEO,r16   ;output pixel 0
 	ld r16,X      	;LUT pixel 1
 	ldd XL,Z+1      ;load ram pixels 2,3
-	nop
+	subi YL,-8		;VRAM+8
 
 	out VIDEO,r16   ;output pixel 1
-	ld r17,Y+      	;next tile
+	ld r17,Y      	;load next tile from VRAM
 	bst r17,7      	;set T flag with msbit of tile index. 1=rom, 0=ram tile     
 	ld r16,X+      	;LUT pixel 2
   
@@ -409,7 +407,7 @@ ramloop:
 	out VIDEO,r16   ;output pixel 4
 	ld r16,X      	;LUT pixel 5
 	ldd XL,Z+3      ;load ram pixels 6,7
-	adc r1,r14		;add rom tile bank offset 
+	adc r1,r18		;add rom tile bank offset 
 
 	out VIDEO,r16   ;output pixel 5
 	ld r16,X+      	;LUT pixel 6
@@ -454,26 +452,22 @@ CopyTileToRam:
 	;compute source adress
 	clr ZL				;tile_table_lo
 	lds ZH,tile_bank	;tile_table_hi
-	
+	ori ZH,1			;add 0x100 offset	
 	mul r24,r18
 	add ZL,r0
 	adc ZH,r1
 
 	;compute destination adress
-	;skip invalid ramtiles
-	ldi XL,lo8(8*32)
-	ldi XH,hi8(8*32)
 	mul r22,r18
-	add XL,r0
-	adc XH,r1
+	movw XL,r0
+	subi XL,lo8(-(ram_tiles))
+	sbci XH,hi8(-(ram_tiles))
 
-	clr r0
 	;copy data (fastest possible)
 .rept TILE_HEIGHT*TILE_WIDTH/2
 	lpm r0,Z+	
 	st X+,r0
 .endr
-
 
 	clr r1
 	ret
@@ -1010,6 +1004,7 @@ SetFont:
 ;************************************
 .section .text.SetTile
 SetTile:
+
 #if SCROLLING == 1
 	;index formula is vram[((y>>3)*256)+8x+(y&7)]
 	
@@ -1027,7 +1022,7 @@ SetTile:
 	andi r23,7		;y&7	
 	add XL,r23
 						
-	subi r20,~(RAM_TILES_COUNT-1)	
+	subi r20,~(127)	
 	st X,r20
 
 	clr r1
@@ -1049,7 +1044,7 @@ SetTile:
 	add XL,r0
 	adc XH,r1
 	
-	subi r20,~(RAM_TILES_COUNT-1)	
+	subi r20,~(127)	
 	st X,r20
 
 	clr r1

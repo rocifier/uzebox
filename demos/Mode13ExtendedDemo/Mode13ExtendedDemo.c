@@ -136,8 +136,8 @@ int main(){
 	for(int y=0;y<28;y++){
 		for(int x=0;x<VRAM_TILES_H;x++){
 			c=pgm_read_byte(&graphicsMap[(y*GRAPHICSMAP_WIDTH)+x+2]);
-			//SetTile(x,y+1,c+4);
-			vram[(y*VRAM_TILES_H)+x]=0x80+(c+0);
+			SetTile(x,y,c);
+			//vram[(y*VRAM_TILES_H)+x]=0x80+(c+0);
 		}	
 	}
 
@@ -151,7 +151,7 @@ int main(){
 
 	u16 i=0;
 	while(1){
-		//SetPaletteColor(1, (u8)(i >> 4));
+	//	SetPaletteColor(1, (u8)(i >> 4));
 		i++;
 		
 		for(int n = 0; n < NUM_MARIOS; n++)
