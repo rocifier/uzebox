@@ -90,6 +90,7 @@ void setup_sprite(mario_t* mario, int base)
 	{
 		mario->dy = 1;
 	}
+	
 }
 
 int main(){	
@@ -129,7 +130,7 @@ int main(){
 */
 
 	SetSpriteVisibility(true);
-
+	Screen.scrollX=0;
 	tile_bank=0x00;
 
 	unsigned char c;
@@ -149,9 +150,11 @@ int main(){
 		marios[n].dy = (rand() % 100) < 50 ? -1 : 1 ;
 	}
 
+
+
 	u16 i=0;
 	while(1){
-	//	SetPaletteColor(1, (u8)(i >> 4));
+		SetPaletteColor(1, (u8)(i >> 4));
 		i++;
 		
 		for(int n = 0; n < NUM_MARIOS; n++)
@@ -164,7 +167,8 @@ int main(){
 			while(ReadJoypad(0)!=0);
 			tile_bank ^= 0x10;
 		}
-			
+		
+	Screen.scrollX++;
 		WaitVsync(1);
 	}		
 	
