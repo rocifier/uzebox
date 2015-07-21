@@ -152,23 +152,39 @@ int main(){
 
 
 
-	u16 i=0;
+	u16 i=0,joy;
+	u8 col=0;
+	SetPaletteColor(1, 7);
 	while(1){
-		SetPaletteColor(1, (u8)(i >> 4));
-		i++;
+		
+		if(i==8){
+			SetPaletteColor(1, col++);
+			i=0;
+		}else{		
+			i++;
+		}
 		
 		for(int n = 0; n < NUM_MARIOS; n++)
 		{
 			setup_sprite(&marios[n], n * 4);
 		}
-
-
-		if(ReadJoypad(0)==BTN_A){
-			while(ReadJoypad(0)!=0);
+		
+		joy=ReadJoypad(0);
+		if(joy==BTN_A){			
 			tile_bank ^= 0x10;
+			while(ReadJoypad(0)!=0);
+		}else if(joy==BTN_LEFT){
+			Screen.scrollX--;
+			while(ReadJoypad(0)!=0);
+		}else if(joy==BTN_RIGHT){
+			Screen.scrollX++;
+			while(ReadJoypad(0)!=0);
 		}
 		
-	Screen.scrollX++;
+		
+		Screen.scrollX++;
+		
+		
 		WaitVsync(1);
 	}		
 	
