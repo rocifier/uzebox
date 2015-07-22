@@ -14,7 +14,7 @@ UZEBIN_DIR=../../../bin/
 ## Kernel settings
 KERNEL_DIR = ../../../kernel
 KERNEL_OPTIONS  = -DVIDEO_MODE=13 -DINTRO_LOGO=0 -DSCROLLING=1 -DSOUND_MIXER=1
-KERNEL_OPTIONS += -DMAX_SPRITES=14 -DRAM_TILES_COUNT=32 -DSCREEN_TILES_V=28 -DEXTENDED_PALETTE=1
+KERNEL_OPTIONS += -DMAX_SPRITES=14 -DRAM_TILES_COUNT=24 -DSCREEN_TILES_V=28 -DEXTENDED_PALETTE=1
 
 
 ## Options common to compile, link and assembly rules
@@ -37,9 +37,7 @@ ASMFLAGS += -x assembler-with-cpp -Wa,-gdwarf2
 LDFLAGS = $(COMMON)
 LDFLAGS += -Wl,-Map=$(GAME).map 
 LDFLAGS += -Wl,-gc-sections 
-LDFLAGS += -Wl,--section-start,.noinit=0x800100 
-##LDFLAGS += -Wl,--section-start,.data=0x800948  ##no scrolling
-LDFLAGS += -Wl,--section-start,.data=0x800a00  
+LDFLAGS += -T $(KERNEL_DIR)/uzebox_linkscript.x
 
 
 ## Intel Hex file production flags

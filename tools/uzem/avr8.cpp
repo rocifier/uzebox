@@ -1361,7 +1361,7 @@ void avr8::trigger_interrupt(int location)
 		// bill the cycles consumed.
 		// (this in theory can recurse back into here but we've
 		// already cleared the interrupt enable flag)
-		update_hardware(5);
+		update_hardware(7);
 
 }
 

@@ -80,7 +80,7 @@
 
 #define VIDEO _SFR_IO_ADDR(DATA_PORT)
 
-.section .noinit
+.section .uze_data_origin
 	.align 8
 	;Ramtiles must be located at 0x100 and RAM_TILES_COUNT must be a multiple of 8
 	;vram must be aligne to 256 bytes

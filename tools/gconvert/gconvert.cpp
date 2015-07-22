@@ -412,8 +412,8 @@ bool process(){
 		    fprintf(tf,"#define %s_SIZE %i\n",toUpperCase(xform.tilesVarName),uniqueTiles.size());
 
 			if(xform.isBackgroundTiles){
-			    fprintf(tf,"const char vector_table_filler[144] __attribute__ ((section (\".vectors\")))={};\n");
-				fprintf(tf,"const char %s[] __attribute__ ((section (\".vectors\")))={\n",xform.tilesVarName);
+			    fprintf(tf,"const char vector_table_filler[144] __attribute__ ((section (\".uze_progmem_origin\")))={};\n");
+				fprintf(tf,"const char %s[] __attribute__ ((section (\"uze_progmem_origin\")))={\n",xform.tilesVarName);
 			}else{
 				fprintf(tf,"const char %s[] PROGMEM ={\n",xform.tilesVarName);
 			}
@@ -533,8 +533,8 @@ bool process(){
 			
 			/*Export tileset in palette extended pixel format*/
 		    fprintf(tf,"#define %s_SIZE %i\n",toUpperCase(xform.tilesVarName),uniqueTiles.size());			
-		    fprintf(tf,"const char vector_table_filler[144] __attribute__ ((section (\".vectors\")))={};\n");
-		    fprintf(tf,"const char %s[] __attribute__ ((section (\".vectors\")))={\n",xform.tilesVarName);
+		    fprintf(tf,"const char vector_table_filler[144] __attribute__ ((section (\".uze_progmem_origin\")))={};\n");
+		    fprintf(tf,"const char %s[] __attribute__ ((section (\".uze_progmem_origin\")))={\n",xform.tilesVarName);
 	
 			int c=0,t=0;
 			unsigned char b;
