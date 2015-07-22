@@ -1,4 +1,10 @@
-/* Default linker script, for normal executables */
+/* Custom Uzebox linker script for normal executables
+ * Creates 2 new sections:
+ *   uze_progmem_ogigin: located in flash right after the vectors
+ *   uze_ram_origin: located at origin 0x100
+ *
+ * Based on: \WinAVR\avr\lib\ldscripts\avr5.x
+ */
 OUTPUT_FORMAT("elf32-avr","elf32-avr","elf32-avr")
 OUTPUT_ARCH(avr:5)
 MEMORY
