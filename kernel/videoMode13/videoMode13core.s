@@ -108,21 +108,16 @@
 	tile_table_hi:			.byte 1
 	font_tile_index:		.byte 1 
 
-	tile_bank:				.byte 1
-
-	overlay_vram:
-	#if SCROLLING == 0 && OVERLAY_LINES >0
-							.space 0 ;VRAM_TILES_H*OVERLAY_LINES
-	#endif	
 
 	;ScreenType struct members
 	Screen:
 		overlay_height:			.byte 1
-		overlay_tile_table:		.word 1
+		overlay_tile_bank:		.byte 1
 	#if SCROLLING == 1
 		screen_scrollX:			.byte 1
 		screen_scrollY:			.byte 1
 		screen_scrollHeight:	.byte 1
+		screen_tile_bank:		.byte 1
 	#endif
 
 .section .text
@@ -134,7 +129,7 @@
 sub_video_mode13:
 
 	;wait cycles to align with next hsync
-	WAIT r16,61
+	WAIT r16,61-20
 
 
 	;Refresh ramtiles indexes in VRAM 
@@ -177,19 +172,6 @@ no_ramtiles:
 	dec r19
 	brne 1b
 
-
-	ldi YL,lo8(vram)
-	ldi YH,hi8(vram)
-	//add X scroll (coarse)
-	lds r18,screen_scrollX ;ScreenScrollX
-	andi r18,0xf8	;(x>>3) * 8 interleave
-	add YL,r18
-
-
-	ldi r16,SCREEN_TILES_V*TILE_HEIGHT; total scanlines to draw (28*8)
-	mov r10,r16
-	clr r22
-
 	;clear any pending timer int (to avoid a crashing bug in uzem 1.20 and previous)
 	ldi ZL,(1<<OCF1B)+(1<<OCF1A)+(1<<TOV1)
 	sts _SFR_MEM_ADDR(TIFR1),ZL
@@ -203,44 +185,99 @@ no_ramtiles:
 	ldi r16,(0<<WGM12)+(1<<CS10)	;switch to timer1 normal mode (mode 0)
 	sts _SFR_MEM_ADDR(TCCR1B),r16
 
-	nop
-	nop
-	nop
-	nop
+
+	lds r3,render_lines_count ;total scanlines to draw
+	clr r2
+
+
+	;compute main section 
+	ldi YL,lo8(vram)
+	ldi YH,hi8(vram)
+	lds r18,screen_scrollX  ;add X scroll (coarse) ScreenScrollX
+	mov r12,r18				;main section X scroll
+	mov r13,r18
+	andi r18,0xf8			;(x>>3) * 8 interleave
+	add YL,r18
+	movw r10,YL			;main section save for after overlay 
+
+	;compute overlay start
+	lds r16,screen_scrollHeight
+	ldi r17,VRAM_TILES_H
+	mul r16,r17	
+	ldi r16,lo8(vram)
+	ldi r17,hi8(vram)
+	add r16,r0
+	adc r17,r1
+	lds r1,overlay_height	
+	clr r0				;set overlay scroll x=0
+
+	ldi r20,SCREEN_TILES_V
+	mov r21,r20
+	sub r21,r1			;V tiles in main section
+	
+	cpse r1,r0			;if overlay height!=0			
+	movw YL,r16			;load overlay vram addr
+	cpse r1,r0				
+	mov r13,r0			;load overlay xscroll
+	cpse r1,r0
+	mov r20,r1			;load overlay height
+
 
 ;****************************************
 ; Rendering main loop starts here
 ;****************************************
-;r10    = total lines to draw
-;r22	=Y tile row
+;r2			= Y tile row
+;r3     	= total lines to draw
+;r10:r11	=main section vram ptr save
+;r12		=main section X scroll save
+;r13		=current section X scroll
+;r14
+;r15
+;r20		=current section height
+;r21		=next/main section height
+;r22
+;r23
+;r25
 ;Y      = vram or overlay_ram if overlay_height>0
 ;
 next_tile_line:	
 	rcall hsync_pulse 
-	WAIT r19,232 - AUDIO_OUT_HSYNC_CYCLES -5
+	WAIT r16,232 - AUDIO_OUT_HSYNC_CYCLES -5
 
 	;***draw line***
 	call render_tile_line
 
-	WAIT r19,73+5
+	WAIT r16,73+5-2
 
-	dec r10
+	dec r3
 	breq frame_end
 
-	inc r22
-	lpm ;3 nop
+	inc r2
 
-	cpi r22,TILE_HEIGHT ;last char line? 1
+	mov r16,r2
+	cpi r16,TILE_HEIGHT ;last char line? 1
 	breq next_tile_row 
 
 	;wait to align with next_tile_row instructions (+1 cycle for the breq)
-	WAIT r19,11
+	WAIT r16,13
 	
 	rjmp next_tile_line	
 
 next_tile_row:
-	clr r22		;current char line			;1	
+	clr r2		;current char line			;1	
 
+	dec r20		;current section height in tiles
+	brne same_section
+
+	mov r20,r21	;main section height
+	movw YL,r10	;main vram ptr
+	mov r13,r12	;main x-scroll
+	rjmp .
+	rjmp .
+	nop
+	rjmp next_tile_line
+
+same_section:
 	;increment vram pointer next row
 	mov r16,YL
 	andi r16,0x7
@@ -252,15 +289,11 @@ next_tile_row:
 	andi YL,0xf8
 	inc YH
 2:
-
-	nop
-	nop
-
 	rjmp next_tile_line
 
 frame_end:
 
-	WAIT r19,18
+	WAIT r16,18
 
 	rcall hsync_pulse ;145
 
@@ -291,9 +324,25 @@ frame_end:
 ;*************************************************
 ; RENDER TILE LINE
 ;
-; r10	= total lines to draw
-; r22	= Y offset in tile
-; Y		= VRAM adress to draw from (must not be modified)
+; Input registers:
+; ----------------
+; r2	= 	Y offset in tile
+; r3	= 	total lines to draw
+; Y		= 	VRAM adress to draw from (must not be modified)
+;
+; Uses		
+; ----
+; r0,r1: temp/muls
+; r4: =32 (tile size in bytes)
+; r5: always zero
+; r6,r7: second tile save Z pointer for main loop 
+; r8: save LUT table ptr for main loop
+; r9: rom or ram tile check
+; r16,r17: temp & first pixel in loops
+; r18:screen_tile_bank
+; r19:screen_scrollX fine scroll
+; r24:byte offset in current tile accounting for y offset	
+; X,Y,Z: pointers
 ;*************************************************
 render_tile_line:
 
@@ -307,29 +356,28 @@ render_tile_line:
 	sts _SFR_MEM_ADDR(TCNT1H),r17
 	sts _SFR_MEM_ADDR(TCNT1L),r16
 	sei
+	nop
+	nop
+	nop
 
-	lds r18,tile_bank
+	lds r18,screen_tile_bank
 	ori r18,1		;set base adress of both ram and rom tiles at 0x100
 
-	mov r24,r22		;compute byte offset in current tilen accounting for y offset		
+	mov r24,r2		;compute byte offset in current tilen accounting for y offset		
 	lsl r24			;Y offset in tile*tile width in bytes (4)
 	lsl r24			;
 	
 	ldi XH,hi8(palette)
 	ldi r16,(TILE_HEIGHT*TILE_WIDTH)/2  ;(bytes per tile)
-	mov r15,r16		;tile size in bytes
+	mov r4,r16		;tile size in bytes
 	
-	clr r2			;always 0 - black pixel for end of line
-	;clr r3
-	clr r4
-	clr r5	
-	inc r4			;always 1
-	
+	clr r5			;always 0 - black pixel for end of line
+		
 	subi YL,-8
     ld r17,Y    	;load second tile # from VRAM
 	bst r17,7		;set T flag with msbit of tile index. 1=rom, 0=ram tile   
 	andi r17,0x7f   ;clear tile index msbit to have both ram/rom tile bases adress at zero	
-	mul r17,r15 	;tile*32	
+	mul r17,r4	 	;tile*32	
     add r0,r24    	;add row offset to tile table addr
 	adc r1,r18		;add rom tile bank offset
 	movw ZL,r0
@@ -348,23 +396,25 @@ render_tile_line:
 
 	subi YL,8
 	ld r17,Y     	;load first tile # from VRAM
-	mov r5,r17		;save for rom or ram check
+	mov r9,r17		;save for rom or ram check
 	andi r17,0x7f   ;clear tile index msbit to have both ram/rom tile bases adress at zero	
-	mul r17,r15 	;tile*32	
+	mul r17,r4 	;tile*32	
     add r0,r24    	;add row offset to tile table addr
 	adc r1,r18		;add rom tile bank offset
 	movw ZL,r0
 	subi YL,-8
  
 
-	lds r19,screen_scrollX
+	mov r19,r13
+	nop
+	;lds r19,screen_scrollX
 	andi r19,7		;keep fine scroll
 	mov r0,r19
 	lsr r0			;adress pixel (2 per byte)
 	add ZL,r0
-	adc ZH,r2
+	adc ZH,r5
 
-	sbrc r5,7
+	sbrc r9,7
 	rjmp rom_scroll
 	nop
 
@@ -377,16 +427,16 @@ ram_scroll:
 	sbrc r19,0
 	inc ZL
 	sbrc r19,0
-	adc ZH,r2
+	adc ZH,r5
 
-	ldi r20,4		;instructions between outs
-	mul r19,r20
-	ldi r20,lo8(pm(ram_jtbl))
-	ldi r21,hi8(pm(ram_jtbl))
-	add r20,r0
-	adc r21,r1
-	push r20
-	push r21
+	ldi r17,4		;instructions between outs
+	mul r19,r17
+	ldi r17,lo8(pm(ram_jtbl))
+	ldi r19,hi8(pm(ram_jtbl))
+	add r17,r0
+	adc r19,r1
+	push r17
+	push r19
 	ret
 
 ram_jtbl:		
@@ -425,8 +475,6 @@ ram_jtbl:
 	nop
 	out VIDEO,r17
 
-	;sub r6,r4
-	;sbc r7,r3
 	rjmp .
 	ld	r17,X
 	nop
@@ -445,16 +493,17 @@ rom_scroll:
 	sbrc r19,0
 	inc ZL
 	sbrc r19,0
-	adc ZH,r2
+	adc ZH,r5
 
-	ldi r20,3		;instructions between outs
-	mul r19,r20
-	ldi r20,lo8(pm(rom_jtbl))
-	ldi r21,hi8(pm(rom_jtbl))
-	add r20,r0
-	adc r21,r1
-	push r20
-	push r21
+	ldi r17,3		;instructions between outs
+	mul r19,r17
+	ldi r17,lo8(pm(rom_jtbl))
+	ldi r19,hi8(pm(rom_jtbl))
+	add r17,r0
+	adc r19,r1
+	push r17
+	push r19
+
 	ret
 
 rom_jtbl:		
@@ -505,7 +554,7 @@ rom_in:
 
 	out VIDEO,r16   ;output pixel 2
 	andi r17,0x7f   ;clear tile index msbit to have both ram/rom tile bases adress at zero
-	mul r17,r15     ;tile index * 32
+	mul r17,r4     ;tile index * 32
 	ld   r16,X      ;LUT pixel 3
 
 	out VIDEO,r16   ;output pixel 3
@@ -547,7 +596,7 @@ ram_in:
 	out VIDEO,r16   ;output pixel 2
 	andi r17,0x7f   ;clear tile index msbit to have both ram/rom tile bases adress at zero
 	ld r16,X      	;LUT pixel 3
-	mul r17,r15     ;tile index * 32
+	mul r17,r4     ;tile index * 32
      
 	out VIDEO,r16   ;output pixel 3
 	ldd XL,Z+2      ;load ram pixels 4,5
@@ -571,7 +620,7 @@ ram_in:
 
 ;end of render line   
 TIMER1_OVF_vect:
-   out VIDEO,r2
+   out VIDEO,r5
 
 
 	pop r0	;pop & discard OVF interrupt return address
@@ -586,12 +635,17 @@ TIMER1_OVF_vect:
 	nop
 	nop
 	nop
+	nop
+	nop
 
 	;restore timer1 to the value it should normally have at this point
-	ldi r16,hi8(3+20)
+	ldi r16,hi8(0)
 	sts _SFR_MEM_ADDR(TCNT1H),r16
-	ldi r16,lo8(3+20)
+	ldi r16,lo8(0)
 	sts _SFR_MEM_ADDR(TCNT1L),r16
+
+
+
 
 	ret	;TCNT1 must be equal to 0x0029
 
@@ -923,7 +977,7 @@ CopyTileToRam:
 
 	;compute source adress
 	clr ZL				;tile_table_lo
-	lds ZH,tile_bank	;tile_table_hi
+	lds ZH,screen_tile_bank	;tile_table_hi
 	ori ZH,1			;add 0x100 offset	
 	mul r24,r18
 	add ZL,r0

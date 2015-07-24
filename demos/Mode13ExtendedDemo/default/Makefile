@@ -59,11 +59,11 @@ LINKONLYOBJECTS =
 INCLUDES = -I"$(KERNEL_DIR)" 
 
 ## Build
-all: $(TARGET) $(GAME).hex $(GAME).eep $(GAME).lss $(GAME).uze  size
+all: ../data/graphics2.inc.h ../data/sprites.inc.h $(TARGET) $(GAME).hex $(GAME).eep $(GAME).lss $(GAME).uze  size
 
 ## Rebuild graphics resource
-../data/graphics.inc.h: ../data/graphics.png ../data/graphics.xml
-	$(UZEBIN_DIR)gconvert ../data/graphics.xml
+../data/graphics2.inc.h: ../data/graphics2.png ../data/graphics2.xml
+	$(UZEBIN_DIR)gconvert ../data/graphics2.xml
 
 ../data/sprites.inc.h: ../data/sprites.png ../data/sprites.xml
 	$(UZEBIN_DIR)gconvert ../data/sprites.xml

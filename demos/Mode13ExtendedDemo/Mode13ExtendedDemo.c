@@ -131,7 +131,9 @@ int main(){
 
 	SetSpriteVisibility(true);
 	Screen.scrollX=0;
-	tile_bank=0x00;
+	Screen.tileBank=0x00;
+	Screen.scrollHeight=24;
+	Screen.overlayHeight=4;
 
 	unsigned char c;
 	for(int y=0;y<28;y++){
@@ -152,18 +154,20 @@ int main(){
 
 
 
+
 	u16 i=0,joy;
 	u8 col=0;
-	SetPaletteColor(1, 7);
+	//SetPaletteColor(1, 7);
 	while(1){
-		
+		/*
 		if(i==8){
 			SetPaletteColor(1, col++);
 			i=0;
 		}else{		
 			i++;
 		}
-		
+		*/
+
 		for(int n = 0; n < NUM_MARIOS; n++)
 		{
 			setup_sprite(&marios[n], n * 4);
@@ -171,7 +175,7 @@ int main(){
 		
 		joy=ReadJoypad(0);
 		if(joy==BTN_A){			
-			tile_bank ^= 0x10;
+			Screen.tileBank ^= 0x10;
 			while(ReadJoypad(0)!=0);
 		}else if(joy==BTN_LEFT){
 			Screen.scrollX--;

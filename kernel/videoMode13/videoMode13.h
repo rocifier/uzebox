@@ -48,11 +48,13 @@ extern struct SpriteStruct sprites[];
 
 typedef struct {
 	u8 overlayHeight;
-	const char *overlayTileTable;
+	u8 overlayTileBank;
+
 	#if SCROLLING == 1		  
 		u8 scrollX;
 		u8 scrollY;
 		u8 scrollHeight;
+		u8 tileBank;
 	#endif
 } ScreenType;
 
