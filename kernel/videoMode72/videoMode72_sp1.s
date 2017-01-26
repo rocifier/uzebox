@@ -20,13 +20,13 @@
 
 ;=============================================================================
 ;
-; Video mode 72, Sprite mode 0
+; Video mode 72, Sprite mode 1
 ;
-; 18 x 8 pixels wide 2bpp sprites
+; 14 x 12 pixels wide 2bpp sprites
 ;
-; Up to 9 sprites per scanline
+; Up to 7 sprites per scanline
 ;
-; Muxed pairs: 0-1, 2-3, 4-5, 6-7, 8-9, 10-11, 12-13, 14-15, 16-17
+; Muxed pairs: 0-1, 2-3, 4-5, 6-7, 8-9, 10-11, 12-13
 ;
 ;=============================================================================
 
@@ -85,7 +85,7 @@
 ;
 ; 400 cycles with ret
 ;
-m72_sp0_yprep:
+m72_sp1_yprep:
 
 	ldi   XL,      lo8(sprites + SP_OFF)
 	ldi   XH,      hi8(sprites + SP_OFF)
@@ -94,30 +94,31 @@ m72_sp0_yprep:
 	ldi   ZL,      lo8(v_spoff)
 	ldi   ZH,      hi8(v_spoff)
 	ldi   r18,     20      ; (  7)
-sp0_ypr_l:
+sp1_ypr_l:
 	ld    r16,     Y
 	ld    r17,     X
 	sub   r17,     r16
 	sub   r17,     r16
-	subi  r17,     2
+	sub   r17,     r16
+	subi  r17,     3
 	st    Z+,      r17
 	adiw  YL,      8
 	adiw  XL,      8
 	dec   r18
-	brne  sp0_ypr_l        ; (326)
+	brne  sp1_ypr_l        ; (346)
 
 	in    XH,      STACKH
 	ldi   XL,      LB_SPR_A
-	ldi   r18,     hi8(pm(m72_sp0_a))
+	ldi   r18,     hi8(pm(m72_sp1_a))
 	st    X+,      r18
-	ldi   r18,     lo8(pm(m72_sp0_a))
+	ldi   r18,     lo8(pm(m72_sp1_a))
 	st    X+,      r18
-	ldi   r18,     hi8(pm(m72_sp0_b))
+	ldi   r18,     hi8(pm(m72_sp1_b))
 	st    X+,      r18
-	ldi   r18,     lo8(pm(m72_sp0_b))
-	st    X+,      r18     ; (340)
+	ldi   r18,     lo8(pm(m72_sp1_b))
+	st    X+,      r18     ; (360)
 
-	WAIT  r18,     56
+	WAIT  r18,     36
 	ret                    ; (400)
 
 
@@ -125,20 +126,23 @@ sp0_ypr_l:
 ;
 ; Entry point A
 ;
-m72_sp0_a:
+; Uses r15 & r16 which it reloads from palette + 13 & 14 upon return
+;
+m72_sp1_a:
 
 	ldi   ZL,      LB_STACK - 1 ; Back to video stack (at the end of the line buffer)
 	out   STACKL,  ZL
-	rjmp  .
-	nop
 	mov   r1,      r18
 	lsl   r1
 	add   r1,      r18          ; 3 x Phys. scanline for offsets
 
 
-	; (1641) Preload
+	; (1638) Preload
 
-	lds   r0,      sprites + ( 2 * 8) + SP_YPOS
+	lds   r15,     sprites + ( 2 * 8) + SP_YPOS
+	lds   r16,     v_sphgt + ( 2)
+	sub   r15,     r18
+	lds   r0,      sprites + ( 3 * 8) + SP_YPOS
 	clr   r20
 
 	; (1646) Sprites 0/1
@@ -149,10 +153,10 @@ m72_sp0_a:
 	add   XL,      YL
 	lds   XL,      sprites + ( 1 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 1)
-	brcs  sp0_a_00act      ; (11 / 12) Sprite 0 has priority over Sprite 1
+	brcs  sp1_a_00act      ; (11 / 12) Sprite 0 has priority over Sprite 1
 	sub   XL,      r18
 	add   XL,      YL
-	brcc  sp0_a_01ina      ; (14 / 15)
+	brcc  sp1_a_01ina      ; (14 / 15)
 
 	; Sprite 1 renders
 
@@ -164,9 +168,9 @@ m72_sp0_a:
 	lds   r23,     sprites + ( 1 * 8) + SP_COL3
 	add   YL,      r1      ; (27)
 	sbrc  r24,     1       ; (28 / 29)
-	rjmp  sp0_a_00mir      ; (30)
+	rjmp  sp1_a_00mir      ; (30)
 
-sp0_a_00nor:
+sp1_a_00nor:
 
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
@@ -177,18 +181,18 @@ sp0_a_00nor:
 	; -----------------
 	icall                  ; (68)
 	ldd   ZL,      Y + 2   ; (70)
-	rjmp  sp0_a_00mie      ; (72)
+	rjmp  sp1_a_00mie      ; (72)
 
-sp0_a_01ina:
+sp1_a_01ina:
 
 	WAIT  YL,      36
 	; --- (Display) ---
 	out   PIXOUT,  r20     ; (1698) Black border
 	; -----------------
 	WAIT  YL,      36
-	rjmp  sp0_a_00end      ; (89)
+	rjmp  sp1_a_00end      ; (89)
 
-sp0_a_00act:
+sp1_a_00act:
 
 	; Sprite 0 renders, Sprite 1 skips
 
@@ -201,10 +205,10 @@ sp0_a_00act:
 	add   YL,      r1      ; (25)
 	sbrc  r24,     0       ; (26 / 27)
 	rjmp  .+2              ; (28)
-	rjmp  sp0_a_00nor      ; (29)
-	rjmp  sp0_a_00mir      ; (30)
+	rjmp  sp1_a_00nor      ; (29)
+	rjmp  sp1_a_00mir      ; (30)
 
-sp0_a_00mir:
+sp1_a_00mir:
 
 	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
@@ -217,24 +221,21 @@ sp0_a_00mir:
 	icall                  ; (70)
 	ldd   ZL,      Y + 0   ; (72)
 
-sp0_a_00mie:
+sp1_a_00mie:
 
 	icall                  ; (89)
 
-sp0_a_00end:
+sp1_a_00end:
 
 
-	; (1736) Sprites 2/3 (-2 cy)
+	; (1736) Sprites 2/3 (-7 cy)
 
-	lds   YL,      v_sphgt + ( 2)
+	add   r15,     r16
+	lds   YL,      v_sphgt + ( 3)
+	brcs  sp1_a_02act      ; (11 / 12) Sprite 2 has priority over Sprite 3
 	sub   r0,      r18
 	add   r0,      YL
-	lds   XL,      sprites + ( 3 * 8) + SP_YPOS
-	lds   YL,      v_sphgt + ( 3)
-	brcs  sp0_a_02act      ; (11 / 12) Sprite 2 has priority over Sprite 3
-	sub   XL,      r18
-	add   XL,      YL
-	brcc  sp0_a_03ina      ; (14 / 15)
+	brcc  sp1_a_03ina      ; (14 / 15)
 
 	; Sprite 3 renders
 
@@ -246,22 +247,24 @@ sp0_a_00end:
 	lds   r23,     sprites + ( 3 * 8) + SP_COL3
 	add   YL,      r1      ; (27)
 	sbrc  r24,     3       ; (28 / 29)
-	rjmp  sp0_a_02mir      ; (30)
+	rjmp  sp1_a_02mir      ; (30)
 
-sp0_a_02nor:
+sp1_a_02nor:
 
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
 	icall                  ; (49)
 	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_a_02mie      ; (53)
+	icall                  ; (68)
+	ldd   ZL,      Y + 2   ; (70)
+	rjmp  sp1_a_02mie      ; (72)
 
-sp0_a_03ina:
+sp1_a_03ina:
 
-	WAIT  YL,      53
-	rjmp  sp0_a_02end      ; (70)
+	WAIT  YL,      72
+	rjmp  sp1_a_02end      ; (89)
 
-sp0_a_02act:
+sp1_a_02act:
 
 	; Sprite 2 renders, Sprite 3 skips
 
@@ -274,44 +277,41 @@ sp0_a_02act:
 	add   YL,      r1      ; (25)
 	sbrc  r24,     2       ; (26 / 27)
 	rjmp  .+2              ; (28)
-	rjmp  sp0_a_02nor      ; (29)
-	rjmp  sp0_a_02mir      ; (30)
+	rjmp  sp1_a_02nor      ; (29)
+	rjmp  sp1_a_02mir      ; (30)
 
-sp0_a_02mir:
+sp1_a_02mir:
 
 	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	ldd   ZL,      Y + 1   ; (34)
+	ldd   ZL,      Y + 2   ; (34)
 	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_a_02mie:
-
+	ldd   ZL,      Y + 1   ; (53)
 	icall                  ; (70)
+	ldd   ZL,      Y + 0   ; (72)
 
-sp0_a_02end:
+sp1_a_02mie:
+
+	icall                  ; (89)
+
+sp1_a_02end:
 
 
-	; (1783) Preload
-
-	lds   r0,      sprites + ( 6 * 8) + SP_YPOS
-	sub   r0,      r18
-	lds   r20,     sprites + ( 7 * 8) + SP_YPOS
-	sub   r20,     r18
-	rjmp  .
-
-	; (1791) Sprites 4/5
+	; (1818) Sprites 4/5
 
 	lds   XL,      sprites + ( 4 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 4)
 	sub   XL,      r18
+	; --- (Display) ---
+	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
+	; -----------------
 	add   XL,      YL
 	lds   XL,      sprites + ( 5 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 5)
-	brcs  sp0_a_04act      ; (11 / 12) Sprite 4 has priority over Sprite 5
+	brcs  sp1_a_04act      ; (11 / 12) Sprite 4 has priority over Sprite 5
 	sub   XL,      r18
 	add   XL,      YL
-	brcc  sp0_a_05ina      ; (14 / 15)
+	brcc  sp1_a_05ina      ; (14 / 15)
 
 	; Sprite 5 renders
 
@@ -323,29 +323,24 @@ sp0_a_02end:
 	lds   r23,     sprites + ( 5 * 8) + SP_COL3
 	add   YL,      r1      ; (27)
 	sbrc  r24,     5       ; (28 / 29)
-	rjmp  sp0_a_04mir      ; (30)
+	rjmp  sp1_a_04mir      ; (30)
 
-sp0_a_04nor:
+sp1_a_04nor:
 
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
-	; --- (Display) ---
-	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
-	; -----------------
 	icall                  ; (49)
 	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_a_04mie      ; (53)
+	icall                  ; (68)
+	ldd   ZL,      Y + 2   ; (70)
+	rjmp  sp1_a_04mie      ; (72)
 
-sp0_a_05ina:
+sp1_a_05ina:
 
-	WAIT  YL,      17
-	; --- (Display) ---
-	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
-	; -----------------
-	WAIT  YL,      36
-	rjmp  sp0_a_04end      ; (70)
+	WAIT  YL,      72
+	rjmp  sp1_a_04end      ; (89)
 
-sp0_a_04act:
+sp1_a_04act:
 
 	; Sprite 4 renders, Sprite 5 skips
 
@@ -358,35 +353,38 @@ sp0_a_04act:
 	add   YL,      r1      ; (25)
 	sbrc  r24,     4       ; (26 / 27)
 	rjmp  .+2              ; (28)
-	rjmp  sp0_a_04nor      ; (29)
-	rjmp  sp0_a_04mir      ; (30)
+	rjmp  sp1_a_04nor      ; (29)
+	rjmp  sp1_a_04mir      ; (30)
 
-sp0_a_04mir:
+sp1_a_04mir:
 
 	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	; --- (Display) ---
-	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
-	; -----------------
-	ldd   ZL,      Y + 1   ; (34)
+	ldd   ZL,      Y + 2   ; (34)
 	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_a_04mie:
-
+	ldd   ZL,      Y + 1   ; (53)
 	icall                  ; (70)
+	ldd   ZL,      Y + 0   ; (72)
 
-sp0_a_04end:
+sp1_a_04mie:
+
+	icall                  ; (89)
+
+sp1_a_04end:
 
 
-	; (  43) Sprites 6/7 (-6 cy)
+	; (  89) Sprites 6/7
 
+	lds   XL,      sprites + ( 6 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 6)
-	add   r0,      YL
+	sub   XL,      r18
+	add   XL,      YL
+	lds   XL,      sprites + ( 7 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 7)
-	brcs  sp0_a_06act      ; (11 + 1 / 12 + 1) Sprite 6 has priority over Sprite 7
-	add   r20,     YL
-	brcc  sp0_a_07ina      ; (14 / 15)
+	brcs  sp1_a_06act      ; (11 / 12) Sprite 6 has priority over Sprite 7
+	sub   XL,      r18
+	add   XL,      YL
+	brcc  sp1_a_07ina      ; (14 / 15)
 
 	; Sprite 7 renders
 
@@ -398,22 +396,33 @@ sp0_a_04end:
 	lds   r23,     sprites + ( 7 * 8) + SP_COL3
 	add   YL,      r1      ; (27)
 	sbrc  r24,     7       ; (28 / 29)
-	rjmp  sp0_a_06mir      ; (30)
+	rjmp  sp1_a_06mir      ; (30)
 
-sp0_a_06nor:
+sp1_a_06nor:
 
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
 	icall                  ; (49)
+	; --- (Display) ---
+	nop
+	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
+	; -----------------
 	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_a_06mie      ; (53)
+	icall                  ; (68)
+	ldd   ZL,      Y + 2   ; (70)
+	rjmp  sp1_a_06mie      ; (72)
 
-sp0_a_07ina:
+sp1_a_07ina:
 
-	WAIT  YL,      53
-	rjmp  sp0_a_06end      ; (70)
+	WAIT  YL,      34
+	; --- (Display) ---
+	nop
+	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
+	; -----------------
+	WAIT  YL,      38
+	rjmp  sp1_a_06end      ; (89)
 
-sp0_a_06act:
+sp1_a_06act:
 
 	; Sprite 6 renders, Sprite 7 skips
 
@@ -423,27 +432,34 @@ sp0_a_06act:
 	lds   r21,     sprites + ( 6 * 8) + SP_COL1
 	lds   r22,     sprites + ( 6 * 8) + SP_COL2
 	lds   r23,     sprites + ( 6 * 8) + SP_COL3
-	add   YL,      r1      ; (25 + 1)
-	sbrs  r24,     6       ; (26 + 1 / 27 + 1)
-	rjmp  sp0_a_06nor      ; (29)
-	rjmp  sp0_a_06mir      ; (30)
+	add   YL,      r1      ; (25)
+	sbrc  r24,     6       ; (26 / 27)
+	rjmp  .+2              ; (28)
+	rjmp  sp1_a_06nor      ; (29)
+	rjmp  sp1_a_06mir      ; (30)
 
-sp0_a_06mir:
+sp1_a_06mir:
 
-	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	ldd   ZL,      Y + 1   ; (34)
-	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_a_06mie:
-
+	ldd   ZL,      Y + 2   ; (34 - 1)
+	icall                  ; (51 - 1)
+	; --- (Display) ---
+	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
+	nop
+	; -----------------
+	nop
+	ldd   ZL,      Y + 1   ; (53)
 	icall                  ; (70)
+	ldd   ZL,      Y + 0   ; (72)
 
-sp0_a_06end:
+sp1_a_06mie:
+
+	icall                  ; (89)
+
+sp1_a_06end:
 
 
-	; ( 107) Sprites 8/9
+	; ( 181) Sprites 8/9
 
 	lds   XL,      sprites + ( 8 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 8)
@@ -451,10 +467,10 @@ sp0_a_06end:
 	add   XL,      YL
 	lds   XL,      sprites + ( 9 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 9)
-	brcs  sp0_a_08act      ; (11 / 12) Sprite 8 has priority over Sprite 9
+	brcs  sp1_a_08act      ; (11 / 12) Sprite 8 has priority over Sprite 9
 	sub   XL,      r18
 	add   XL,      YL
-	brcc  sp0_a_09ina      ; (14 / 15)
+	brcc  sp1_a_09ina      ; (14 / 15)
 
 	; Sprite 9 renders
 
@@ -466,29 +482,24 @@ sp0_a_06end:
 	lds   r23,     sprites + ( 9 * 8) + SP_COL3
 	add   YL,      r1      ; (27)
 	sbrc  r25,     1       ; (28 / 29)
-	rjmp  sp0_a_08mir      ; (30)
+	rjmp  sp1_a_08mir      ; (30)
 
-sp0_a_08nor:
+sp1_a_08nor:
 
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
-	; --- (Display) ---
-	sbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes high
-	; -----------------
 	icall                  ; (49)
 	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_a_08mie      ; (53)
+	icall                  ; (68)
+	ldd   ZL,      Y + 2   ; (70)
+	rjmp  sp1_a_08mie      ; (72)
 
-sp0_a_09ina:
+sp1_a_09ina:
 
-	WAIT  YL,      17
-	; --- (Display) ---
-	sbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes high
-	; -----------------
-	WAIT  YL,      36
-	rjmp  sp0_a_08end      ; (70)
+	WAIT  YL,      72
+	rjmp  sp1_a_08end      ; (89)
 
-sp0_a_08act:
+sp1_a_08act:
 
 	; Sprite 8 renders, Sprite 9 skips
 
@@ -501,28 +512,37 @@ sp0_a_08act:
 	add   YL,      r1      ; (25)
 	sbrc  r25,     0       ; (26 / 27)
 	rjmp  .+2              ; (28)
-	rjmp  sp0_a_08nor      ; (29)
-	rjmp  sp0_a_08mir      ; (30)
+	rjmp  sp1_a_08nor      ; (29)
+	rjmp  sp1_a_08mir      ; (30)
 
-sp0_a_08mir:
+sp1_a_08mir:
 
 	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	; --- (Display) ---
-	sbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes high
-	; -----------------
-	ldd   ZL,      Y + 1   ; (34)
+	ldd   ZL,      Y + 2   ; (34)
 	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_a_08mie:
-
+	ldd   ZL,      Y + 1   ; (53)
 	icall                  ; (70)
+	ldd   ZL,      Y + 0   ; (72)
 
-sp0_a_08end:
+sp1_a_08mie:
+
+	icall                  ; (89)
+
+sp1_a_08end:
 
 
-	; ( 179) Sprites 10/11
+	; ( 270) Preload
+
+	lds   r15,     sprites + (12 * 8) + SP_YPOS
+	lds   r16,     v_sphgt + (12)
+	sub   r15,     r18
+	lds   r0,      sprites + (13 * 8) + SP_YPOS
+	lds   r20,     v_sphgt + (13)
+	sub   r0,      r18
+	nop
+
+	; ( 281) Sprites 10/11
 
 	lds   XL,      sprites + (10 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + (10)
@@ -530,10 +550,10 @@ sp0_a_08end:
 	add   XL,      YL
 	lds   XL,      sprites + (11 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + (11)
-	brcs  sp0_a_10act      ; (11 / 12) Sprite 10 has priority over Sprite 11
+	brcs  sp1_a_10act      ; (11 / 12) Sprite 10 has priority over Sprite 11
 	sub   XL,      r18
 	add   XL,      YL
-	brcc  sp0_a_11ina      ; (14 / 15)
+	brcc  sp1_a_11ina      ; (14 / 15)
 
 	; Sprite 11 renders
 
@@ -545,22 +565,28 @@ sp0_a_08end:
 	lds   r23,     sprites + (11 * 8) + SP_COL3
 	add   YL,      r1      ; (27)
 	sbrc  r25,     3       ; (28 / 29)
-	rjmp  sp0_a_10mir      ; (30)
+	rjmp  sp1_a_10mir      ; (30)
 
-sp0_a_10nor:
+sp1_a_10nor:
 
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
 	icall                  ; (49)
 	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_a_10mie      ; (53)
+	icall                  ; (68)
+	ldd   ZL,      Y + 2   ; (70)
+	rjmp  sp1_a_10mie      ; (72)
 
-sp0_a_11ina:
+sp1_a_11ina:
 
-	WAIT  YL,      53
-	rjmp  sp0_a_10end      ; (70)
+	WAIT  YL,      57
+	; --- (Display) ---
+	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
+	; -----------------
+	WAIT  YL,      15
+	rjmp  sp1_a_10end      ; (89)
 
-sp0_a_10act:
+sp1_a_10act:
 
 	; Sprite 10 renders, Sprite 11 skips
 
@@ -573,36 +599,35 @@ sp0_a_10act:
 	add   YL,      r1      ; (25)
 	sbrc  r25,     2       ; (26 / 27)
 	rjmp  .+2              ; (28)
-	rjmp  sp0_a_10nor      ; (29)
-	rjmp  sp0_a_10mir      ; (30)
+	rjmp  sp1_a_10nor      ; (29)
+	rjmp  sp1_a_10mir      ; (30)
 
-sp0_a_10mir:
+sp1_a_10mir:
 
 	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	ldd   ZL,      Y + 1   ; (34)
+	ldd   ZL,      Y + 2   ; (34)
 	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_a_10mie:
-
+	ldd   ZL,      Y + 1   ; (53)
 	icall                  ; (70)
+	ldd   ZL,      Y + 0   ; (72)
 
-sp0_a_10end:
+sp1_a_10mie:
+
+	; --- (Display) ---
+	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
+	; -----------------
+	icall                  ; (89)
+
+sp1_a_10end:
 
 
-	; ( 249) Sprites 12/13
+	; ( 371) Sprites 12/13 (-10 cy)
 
-	lds   XL,      sprites + (12 * 8) + SP_YPOS
-	lds   YL,      v_sphgt + (12)
-	sub   XL,      r18
-	add   XL,      YL
-	lds   XL,      sprites + (13 * 8) + SP_YPOS
-	lds   YL,      v_sphgt + (13)
-	brcs  sp0_a_12act      ; (11 / 12) Sprite 12 has priority over Sprite 13
-	sub   XL,      r18
-	add   XL,      YL
-	brcc  sp0_a_13ina      ; (14 / 15)
+	add   r15,     r16
+	brcs  sp1_a_12act      ; (11 + 1 / 12 + 1) Sprite 12 has priority over Sprite 13
+	add   r0,      r20
+	brcc  sp1_a_13ina      ; (14 / 15)
 
 	; Sprite 13 renders
 
@@ -614,22 +639,24 @@ sp0_a_10end:
 	lds   r23,     sprites + (13 * 8) + SP_COL3
 	add   YL,      r1      ; (27)
 	sbrc  r25,     5       ; (28 / 29)
-	rjmp  sp0_a_12mir      ; (30)
+	rjmp  sp1_a_12mir      ; (30)
 
-sp0_a_12nor:
+sp1_a_12nor:
 
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
 	icall                  ; (49)
 	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_a_12mie      ; (53)
+	icall                  ; (68)
+	ldd   ZL,      Y + 2   ; (70)
+	rjmp  sp1_a_12mie      ; (72)
 
-sp0_a_13ina:
+sp1_a_13ina:
 
-	WAIT  YL,      53
-	rjmp  sp0_a_12end      ; (70)
+	WAIT  YL,      72
+	rjmp  sp1_a_12end      ; (89)
 
-sp0_a_12act:
+sp1_a_12act:
 
 	; Sprite 12 renders, Sprite 13 skips
 
@@ -639,181 +666,39 @@ sp0_a_12act:
 	lds   r21,     sprites + (12 * 8) + SP_COL1
 	lds   r22,     sprites + (12 * 8) + SP_COL2
 	lds   r23,     sprites + (12 * 8) + SP_COL3
-	add   YL,      r1      ; (25)
-	sbrc  r25,     4       ; (26 / 27)
-	rjmp  .+2              ; (28)
-	rjmp  sp0_a_12nor      ; (29)
-	rjmp  sp0_a_12mir      ; (30)
+	add   YL,      r1      ; (25 + 1)
+	sbrs  r25,     4       ; (26 + 1 / 27 + 1)
+	rjmp  sp1_a_12nor      ; (29)
+	rjmp  sp1_a_12mir      ; (30)
 
-sp0_a_12mir:
-
-	nop
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	ldd   ZL,      Y + 1   ; (34)
-	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_a_12mie:
-
-	icall                  ; (70)
-
-sp0_a_12end:
-
-
-	; ( 319) Preload
-
-	lds   r0,      sprites + (16 * 8) + SP_YPOS
-
-	; ( 321) Sprites 14/15
-
-	lds   XL,      sprites + (14 * 8) + SP_YPOS
-	lds   YL,      v_sphgt + (14)
-	sub   XL,      r18
-	add   XL,      YL
-	lds   XL,      sprites + (15 * 8) + SP_YPOS
-	lds   YL,      v_sphgt + (15)
-	brcs  sp0_a_14act      ; (11 / 12) Sprite 14 has priority over Sprite 15
-	sub   XL,      r18
-	add   XL,      YL
-	brcc  sp0_a_15ina      ; (14 / 15)
-
-	; Sprite 15 renders
-
-	lds   YL,      v_spoff + (15)
-	lds   YH,      sprites + (15 * 8) + SP_BANK
-	lds   XL,      sprites + (15 * 8) + SP_XPOS
-	lds   r21,     sprites + (15 * 8) + SP_COL1
-	lds   r22,     sprites + (15 * 8) + SP_COL2
-	lds   r23,     sprites + (15 * 8) + SP_COL3
-	add   YL,      r1      ; (27)
-	sbrc  r25,     7       ; (28 / 29)
-	rjmp  sp0_a_14mir      ; (30)
-
-sp0_a_14nor:
-
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	ldd   ZL,      Y + 0   ; (32)
-	; --- (Display) ---
-	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
-	; -----------------
-	icall                  ; (49)
-	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_a_14mie      ; (53)
-
-sp0_a_15ina:
-
-	WAIT  YL,      17
-	; --- (Display) ---
-	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
-	; -----------------
-	WAIT  YL,      36
-	rjmp  sp0_a_14end      ; (70)
-
-sp0_a_14act:
-
-	; Sprite 14 renders, Sprite 15 skips
-
-	lds   YL,      v_spoff + (14)
-	lds   YH,      sprites + (14 * 8) + SP_BANK
-	lds   XL,      sprites + (14 * 8) + SP_XPOS
-	lds   r21,     sprites + (14 * 8) + SP_COL1
-	lds   r22,     sprites + (14 * 8) + SP_COL2
-	lds   r23,     sprites + (14 * 8) + SP_COL3
-	add   YL,      r1      ; (25)
-	sbrc  r25,     6       ; (26 / 27)
-	rjmp  .+2              ; (28)
-	rjmp  sp0_a_14nor      ; (29)
-	rjmp  sp0_a_14mir      ; (30)
-
-sp0_a_14mir:
+sp1_a_12mir:
 
 	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	; --- (Display) ---
-	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
-	; -----------------
-	ldd   ZL,      Y + 1   ; (34)
+	ldd   ZL,      Y + 2   ; (34)
 	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_a_14mie:
-
+	ldd   ZL,      Y + 1   ; (53)
 	icall                  ; (70)
+	ldd   ZL,      Y + 0   ; (72)
 
-sp0_a_14end:
+sp1_a_12mie:
+
+	icall                  ; (89)
+
+sp1_a_12end:
 
 
-	; ( 392) Sprites 16/17 (-2)
+	; ( 450) End
 
-	lds   YL,      v_sphgt + (16)
-	sub   r0,      r18
-	add   r0,      YL
-	lds   XL,      sprites + (17 * 8) + SP_YPOS
-	lds   YL,      v_sphgt + (17)
-	brcs  sp0_a_16act      ; (11 / 12) Sprite 16 has priority over Sprite 17
-	sub   XL,      r18
-	add   XL,      YL
-	brcc  sp0_a_17ina      ; (14 / 15)
-
-	; Sprite 17 renders
-
-	lds   YL,      v_spoff + (17)
-	lds   YH,      sprites + (17 * 8) + SP_BANK
-	lds   XL,      sprites + (17 * 8) + SP_XPOS
-	lds   r21,     sprites + (17 * 8) + SP_COL1
-	lds   r22,     sprites + (17 * 8) + SP_COL2
-	lds   r23,     sprites + (17 * 8) + SP_COL3
-	add   YL,      r1      ; (27)
-	sbic  GPR0,    5       ; (28 / 29)
-	rjmp  sp0_a_16mir      ; (30)
-
-sp0_a_16nor:
-
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	ldd   ZL,      Y + 0   ; (32)
-	icall                  ; (49)
-	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_a_16mie      ; (53)
-
-sp0_a_17ina:
-
-	WAIT  YL,      53
-	rjmp  sp0_a_16end      ; (70)
-
-sp0_a_16act:
-
-	; Sprite 16 renders, Sprite 17 skips
-
-	lds   YL,      v_spoff + (16)
-	lds   YH,      sprites + (16 * 8) + SP_BANK
-	lds   XL,      sprites + (16 * 8) + SP_XPOS
-	lds   r21,     sprites + (16 * 8) + SP_COL1
-	lds   r22,     sprites + (16 * 8) + SP_COL2
-	lds   r23,     sprites + (16 * 8) + SP_COL3
-	add   YL,      r1      ; (25)
-	sbic  GPR0,    4       ; (26 / 27)
-	rjmp  .+2              ; (28)
-	rjmp  sp0_a_16nor      ; (29)
-	rjmp  sp0_a_16mir      ; (30)
-
-sp0_a_16mir:
-
+	rjmp  .
+	rjmp  .
+	rjmp  .
 	nop
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	ldd   ZL,      Y + 1   ; (34)
-	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
 
-sp0_a_16mie:
+	; ( 457) Restore used color registers
 
-	icall                  ; (70)
-
-sp0_a_16end:
-
-
-	; ( 460) End
-
-	nop
+	lds   r15,     palette + 13
+	lds   r16,     palette + 14
 
 	; ( 461) Go on to next line
 
@@ -828,22 +713,26 @@ sp0_a_16end:
 ;
 ; Entry point B
 ;
-m72_sp0_b:
+; Uses r15 & r16 which it reloads from palette + 13 & 14 upon return
+;
+m72_sp1_b:
 
 	ldi   ZL,      LB_STACK - 1 ; Back to video stack (at the end of the line buffer)
 	out   STACKL,  ZL
-	rjmp  .
-	rjmp  .
 	mov   r1,      r18
-	lsl   r1               ; 2 x Phys. scanline for offsets
+	lsl   r1
+	add   r1,      r18          ; 3 x Phys. scanline for offsets
 
 
-	; (1641) Preload
+	; (1638) Preload
 
-	lds   r0,      sprites + ( 3 * 8) + SP_YPOS
+	lds   r15,     sprites + ( 3 * 8) + SP_YPOS
+	lds   r16,     v_sphgt + ( 3)
+	sub   r15,     r18
+	lds   r0,      sprites + ( 2 * 8) + SP_YPOS
 	clr   r20
 
-	; (1644) Sprites 0/1
+	; (1646) Sprites 0/1
 
 	lds   XL,      sprites + ( 1 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 1)
@@ -851,10 +740,10 @@ m72_sp0_b:
 	add   XL,      YL
 	lds   XL,      sprites + ( 0 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 0)
-	brcs  sp0_b_00act      ; (11 / 12) Sprite 0 has priority over Sprite 1
+	brcs  sp1_b_00act      ; (11 / 12) Sprite 0 has priority over Sprite 1
 	sub   XL,      r18
 	add   XL,      YL
-	brcc  sp0_b_01ina      ; (14 / 15)
+	brcc  sp1_b_01ina      ; (14 / 15)
 
 	; Sprite 1 renders
 
@@ -866,26 +755,31 @@ m72_sp0_b:
 	lds   r23,     sprites + ( 0 * 8) + SP_COL3
 	add   YL,      r1      ; (27)
 	sbrc  r24,     0       ; (28 / 29)
-	rjmp  sp0_b_00mir      ; (30)
+	rjmp  sp1_b_00mir      ; (30)
 
-sp0_b_00nor:
+sp1_b_00nor:
 
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
 	icall                  ; (49)
 	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_b_00mie      ; (53)
-
-sp0_b_01ina:
-
-	WAIT  YL,      38
 	; --- (Display) ---
 	out   PIXOUT,  r20     ; (1698) Black border
 	; -----------------
-	WAIT  YL,      15
-	rjmp  sp0_b_00end      ; (70)
+	icall                  ; (68)
+	ldd   ZL,      Y + 2   ; (70)
+	rjmp  sp1_b_00mie      ; (72)
 
-sp0_b_00act:
+sp1_b_01ina:
+
+	WAIT  YL,      36
+	; --- (Display) ---
+	out   PIXOUT,  r20     ; (1698) Black border
+	; -----------------
+	WAIT  YL,      36
+	rjmp  sp1_b_00end      ; (89)
+
+sp1_b_00act:
 
 	; Sprite 0 renders, Sprite 1 skips
 
@@ -898,38 +792,37 @@ sp0_b_00act:
 	add   YL,      r1      ; (25)
 	sbrc  r24,     1       ; (26 / 27)
 	rjmp  .+2              ; (28)
-	rjmp  sp0_b_00nor      ; (29)
-	rjmp  sp0_b_00mir      ; (30)
+	rjmp  sp1_b_00nor      ; (29)
+	rjmp  sp1_b_00mir      ; (30)
 
-sp0_b_00mir:
+sp1_b_00mir:
 
 	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	ldd   ZL,      Y + 1   ; (34)
+	ldd   ZL,      Y + 2   ; (34)
 	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_b_00mie:
-
 	; --- (Display) ---
 	out   PIXOUT,  r20     ; (1698) Black border
 	; -----------------
+	ldd   ZL,      Y + 1   ; (53)
 	icall                  ; (70)
+	ldd   ZL,      Y + 0   ; (72)
 
-sp0_b_00end:
+sp1_b_00mie:
+
+	icall                  ; (89)
+
+sp1_b_00end:
 
 
-	; (1715) Sprites 2/3 (-2 cy)
+	; (1736) Sprites 2/3 (-7 cy)
 
-	lds   YL,      v_sphgt + ( 3)
+	add   r15,     r16
+	lds   YL,      v_sphgt + ( 2)
+	brcs  sp1_b_02act      ; (11 / 12) Sprite 2 has priority over Sprite 3
 	sub   r0,      r18
 	add   r0,      YL
-	lds   XL,      sprites + ( 2 * 8) + SP_YPOS
-	lds   YL,      v_sphgt + ( 2)
-	brcs  sp0_b_02act      ; (11 / 12) Sprite 2 has priority over Sprite 3
-	sub   XL,      r18
-	add   XL,      YL
-	brcc  sp0_b_03ina      ; (14 / 15)
+	brcc  sp1_b_03ina      ; (14 / 15)
 
 	; Sprite 3 renders
 
@@ -941,22 +834,24 @@ sp0_b_00end:
 	lds   r23,     sprites + ( 2 * 8) + SP_COL3
 	add   YL,      r1      ; (27)
 	sbrc  r24,     2       ; (28 / 29)
-	rjmp  sp0_b_02mir      ; (30)
+	rjmp  sp1_b_02mir      ; (30)
 
-sp0_b_02nor:
+sp1_b_02nor:
 
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
 	icall                  ; (49)
 	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_b_02mie      ; (53)
+	icall                  ; (68)
+	ldd   ZL,      Y + 2   ; (70)
+	rjmp  sp1_b_02mie      ; (72)
 
-sp0_b_03ina:
+sp1_b_03ina:
 
-	WAIT  YL,      53
-	rjmp  sp0_b_02end      ; (70)
+	WAIT  YL,      72
+	rjmp  sp1_b_02end      ; (89)
 
-sp0_b_02act:
+sp1_b_02act:
 
 	; Sprite 2 renders, Sprite 3 skips
 
@@ -969,44 +864,41 @@ sp0_b_02act:
 	add   YL,      r1      ; (25)
 	sbrc  r24,     3       ; (26 / 27)
 	rjmp  .+2              ; (28)
-	rjmp  sp0_b_02nor      ; (29)
-	rjmp  sp0_b_02mir      ; (30)
+	rjmp  sp1_b_02nor      ; (29)
+	rjmp  sp1_b_02mir      ; (30)
 
-sp0_b_02mir:
+sp1_b_02mir:
 
 	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	ldd   ZL,      Y + 1   ; (34)
+	ldd   ZL,      Y + 2   ; (34)
 	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_b_02mie:
-
+	ldd   ZL,      Y + 1   ; (53)
 	icall                  ; (70)
+	ldd   ZL,      Y + 0   ; (72)
 
-sp0_b_02end:
+sp1_b_02mie:
+
+	icall                  ; (89)
+
+sp1_b_02end:
 
 
-	; (1783) Preload
-
-	lds   r0,      sprites + ( 7 * 8) + SP_YPOS
-	sub   r0,      r18
-	lds   r20,     sprites + ( 6 * 8) + SP_YPOS
-	sub   r20,     r18
-	rjmp  .
-
-	; (1791) Sprites 4/5
+	; (1818) Sprites 4/5
 
 	lds   XL,      sprites + ( 5 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 5)
 	sub   XL,      r18
+	; --- (Display) ---
+	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
+	; -----------------
 	add   XL,      YL
 	lds   XL,      sprites + ( 4 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 4)
-	brcs  sp0_b_04act      ; (11 / 12) Sprite 4 has priority over Sprite 5
+	brcs  sp1_b_04act      ; (11 / 12) Sprite 4 has priority over Sprite 5
 	sub   XL,      r18
 	add   XL,      YL
-	brcc  sp0_b_05ina      ; (14 / 15)
+	brcc  sp1_b_05ina      ; (14 / 15)
 
 	; Sprite 5 renders
 
@@ -1018,29 +910,24 @@ sp0_b_02end:
 	lds   r23,     sprites + ( 4 * 8) + SP_COL3
 	add   YL,      r1      ; (27)
 	sbrc  r24,     4       ; (28 / 29)
-	rjmp  sp0_b_04mir      ; (30)
+	rjmp  sp1_b_04mir      ; (30)
 
-sp0_b_04nor:
+sp1_b_04nor:
 
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
-	; --- (Display) ---
-	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
-	; -----------------
 	icall                  ; (49)
 	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_b_04mie      ; (53)
+	icall                  ; (68)
+	ldd   ZL,      Y + 2   ; (70)
+	rjmp  sp1_b_04mie      ; (72)
 
-sp0_b_05ina:
+sp1_b_05ina:
 
-	WAIT  YL,      17
-	; --- (Display) ---
-	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
-	; -----------------
-	WAIT  YL,      36
-	rjmp  sp0_b_04end      ; (70)
+	WAIT  YL,      72
+	rjmp  sp1_b_04end      ; (89)
 
-sp0_b_04act:
+sp1_b_04act:
 
 	; Sprite 4 renders, Sprite 5 skips
 
@@ -1053,35 +940,38 @@ sp0_b_04act:
 	add   YL,      r1      ; (25)
 	sbrc  r24,     5       ; (26 / 27)
 	rjmp  .+2              ; (28)
-	rjmp  sp0_b_04nor      ; (29)
-	rjmp  sp0_b_04mir      ; (30)
+	rjmp  sp1_b_04nor      ; (29)
+	rjmp  sp1_b_04mir      ; (30)
 
-sp0_b_04mir:
+sp1_b_04mir:
 
 	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	; --- (Display) ---
-	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
-	; -----------------
-	ldd   ZL,      Y + 1   ; (34)
+	ldd   ZL,      Y + 2   ; (34)
 	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_b_04mie:
-
+	ldd   ZL,      Y + 1   ; (53)
 	icall                  ; (70)
+	ldd   ZL,      Y + 0   ; (72)
 
-sp0_b_04end:
+sp1_b_04mie:
+
+	icall                  ; (89)
+
+sp1_b_04end:
 
 
-	; (  43) Sprites 6/7 (-6 cy)
+	; (  89) Sprites 6/7
 
+	lds   XL,      sprites + ( 7 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 7)
-	add   r0,      YL
+	sub   XL,      r18
+	add   XL,      YL
+	lds   XL,      sprites + ( 6 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 6)
-	brcs  sp0_b_06act      ; (11 + 1 / 12 + 1) Sprite 6 has priority over Sprite 7
-	add   r20,     YL
-	brcc  sp0_b_07ina      ; (14 / 15)
+	brcs  sp1_b_06act      ; (11 / 12) Sprite 6 has priority over Sprite 7
+	sub   XL,      r18
+	add   XL,      YL
+	brcc  sp1_b_07ina      ; (14 / 15)
 
 	; Sprite 7 renders
 
@@ -1093,22 +983,33 @@ sp0_b_04end:
 	lds   r23,     sprites + ( 6 * 8) + SP_COL3
 	add   YL,      r1      ; (27)
 	sbrc  r24,     6       ; (28 / 29)
-	rjmp  sp0_b_06mir      ; (30)
+	rjmp  sp1_b_06mir      ; (30)
 
-sp0_b_06nor:
+sp1_b_06nor:
 
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
 	icall                  ; (49)
+	; --- (Display) ---
+	nop
+	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
+	; -----------------
 	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_b_06mie      ; (53)
+	icall                  ; (68)
+	ldd   ZL,      Y + 2   ; (70)
+	rjmp  sp1_b_06mie      ; (72)
 
-sp0_b_07ina:
+sp1_b_07ina:
 
-	WAIT  YL,      53
-	rjmp  sp0_b_06end      ; (70)
+	WAIT  YL,      34
+	; --- (Display) ---
+	nop
+	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
+	; -----------------
+	WAIT  YL,      38
+	rjmp  sp1_b_06end      ; (89)
 
-sp0_b_06act:
+sp1_b_06act:
 
 	; Sprite 6 renders, Sprite 7 skips
 
@@ -1118,27 +1019,34 @@ sp0_b_06act:
 	lds   r21,     sprites + ( 7 * 8) + SP_COL1
 	lds   r22,     sprites + ( 7 * 8) + SP_COL2
 	lds   r23,     sprites + ( 7 * 8) + SP_COL3
-	add   YL,      r1      ; (25 + 1)
-	sbrs  r24,     7       ; (26 + 1 / 27 + 1)
-	rjmp  sp0_b_06nor      ; (29)
-	rjmp  sp0_b_06mir      ; (30)
+	add   YL,      r1      ; (25)
+	sbrc  r24,     7       ; (26 / 27)
+	rjmp  .+2              ; (28)
+	rjmp  sp1_b_06nor      ; (29)
+	rjmp  sp1_b_06mir      ; (30)
 
-sp0_b_06mir:
+sp1_b_06mir:
 
-	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	ldd   ZL,      Y + 1   ; (34)
-	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_b_06mie:
-
+	ldd   ZL,      Y + 2   ; (34 - 1)
+	icall                  ; (51 - 1)
+	; --- (Display) ---
+	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
+	nop
+	; -----------------
+	nop
+	ldd   ZL,      Y + 1   ; (53)
 	icall                  ; (70)
+	ldd   ZL,      Y + 0   ; (72)
 
-sp0_b_06end:
+sp1_b_06mie:
+
+	icall                  ; (89)
+
+sp1_b_06end:
 
 
-	; ( 107) Sprites 8/9
+	; ( 181) Sprites 8/9
 
 	lds   XL,      sprites + ( 9 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 9)
@@ -1146,10 +1054,10 @@ sp0_b_06end:
 	add   XL,      YL
 	lds   XL,      sprites + ( 8 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + ( 8)
-	brcs  sp0_b_08act      ; (11 / 12) Sprite 8 has priority over Sprite 9
+	brcs  sp1_b_08act      ; (11 / 12) Sprite 8 has priority over Sprite 9
 	sub   XL,      r18
 	add   XL,      YL
-	brcc  sp0_b_09ina      ; (14 / 15)
+	brcc  sp1_b_09ina      ; (14 / 15)
 
 	; Sprite 9 renders
 
@@ -1161,29 +1069,24 @@ sp0_b_06end:
 	lds   r23,     sprites + ( 8 * 8) + SP_COL3
 	add   YL,      r1      ; (27)
 	sbrc  r25,     0       ; (28 / 29)
-	rjmp  sp0_b_08mir      ; (30)
+	rjmp  sp1_b_08mir      ; (30)
 
-sp0_b_08nor:
+sp1_b_08nor:
 
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
-	; --- (Display) ---
-	sbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes high
-	; -----------------
 	icall                  ; (49)
 	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_b_08mie      ; (53)
+	icall                  ; (68)
+	ldd   ZL,      Y + 2   ; (70)
+	rjmp  sp1_b_08mie      ; (72)
 
-sp0_b_09ina:
+sp1_b_09ina:
 
-	WAIT  YL,      17
-	; --- (Display) ---
-	sbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes high
-	; -----------------
-	WAIT  YL,      36
-	rjmp  sp0_b_08end      ; (70)
+	WAIT  YL,      72
+	rjmp  sp1_b_08end      ; (89)
 
-sp0_b_08act:
+sp1_b_08act:
 
 	; Sprite 8 renders, Sprite 9 skips
 
@@ -1196,28 +1099,37 @@ sp0_b_08act:
 	add   YL,      r1      ; (25)
 	sbrc  r25,     1       ; (26 / 27)
 	rjmp  .+2              ; (28)
-	rjmp  sp0_b_08nor      ; (29)
-	rjmp  sp0_b_08mir      ; (30)
+	rjmp  sp1_b_08nor      ; (29)
+	rjmp  sp1_b_08mir      ; (30)
 
-sp0_b_08mir:
+sp1_b_08mir:
 
 	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	; --- (Display) ---
-	sbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes high
-	; -----------------
-	ldd   ZL,      Y + 1   ; (34)
+	ldd   ZL,      Y + 2   ; (34)
 	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_b_08mie:
-
+	ldd   ZL,      Y + 1   ; (53)
 	icall                  ; (70)
+	ldd   ZL,      Y + 0   ; (72)
 
-sp0_b_08end:
+sp1_b_08mie:
+
+	icall                  ; (89)
+
+sp1_b_08end:
 
 
-	; ( 179) Sprites 10/11
+	; ( 270) Preload
+
+	lds   r15,     sprites + (13 * 8) + SP_YPOS
+	lds   r16,     v_sphgt + (13)
+	sub   r15,     r18
+	lds   r0,      sprites + (12 * 8) + SP_YPOS
+	lds   r20,     v_sphgt + (12)
+	sub   r0,      r18
+	nop
+
+	; ( 281) Sprites 10/11
 
 	lds   XL,      sprites + (11 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + (11)
@@ -1225,10 +1137,10 @@ sp0_b_08end:
 	add   XL,      YL
 	lds   XL,      sprites + (10 * 8) + SP_YPOS
 	lds   YL,      v_sphgt + (10)
-	brcs  sp0_b_10act      ; (11 / 12) Sprite 10 has priority over Sprite 11
+	brcs  sp1_b_10act      ; (11 / 12) Sprite 10 has priority over Sprite 11
 	sub   XL,      r18
 	add   XL,      YL
-	brcc  sp0_b_11ina      ; (14 / 15)
+	brcc  sp1_b_11ina      ; (14 / 15)
 
 	; Sprite 11 renders
 
@@ -1240,22 +1152,28 @@ sp0_b_08end:
 	lds   r23,     sprites + (10 * 8) + SP_COL3
 	add   YL,      r1      ; (27)
 	sbrc  r25,     2       ; (28 / 29)
-	rjmp  sp0_b_10mir      ; (30)
+	rjmp  sp1_b_10mir      ; (30)
 
-sp0_b_10nor:
+sp1_b_10nor:
 
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
 	icall                  ; (49)
 	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_b_10mie      ; (53)
+	icall                  ; (68)
+	ldd   ZL,      Y + 2   ; (70)
+	rjmp  sp1_b_10mie      ; (72)
 
-sp0_b_11ina:
+sp1_b_11ina:
 
-	WAIT  YL,      53
-	rjmp  sp0_b_10end      ; (70)
+	WAIT  YL,      57
+	; --- (Display) ---
+	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
+	; -----------------
+	WAIT  YL,      15
+	rjmp  sp1_b_10end      ; (89)
 
-sp0_b_10act:
+sp1_b_10act:
 
 	; Sprite 10 renders, Sprite 11 skips
 
@@ -1268,36 +1186,35 @@ sp0_b_10act:
 	add   YL,      r1      ; (25)
 	sbrc  r25,     3       ; (26 / 27)
 	rjmp  .+2              ; (28)
-	rjmp  sp0_b_10nor      ; (29)
-	rjmp  sp0_b_10mir      ; (30)
+	rjmp  sp1_b_10nor      ; (29)
+	rjmp  sp1_b_10mir      ; (30)
 
-sp0_b_10mir:
+sp1_b_10mir:
 
 	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	ldd   ZL,      Y + 1   ; (34)
+	ldd   ZL,      Y + 2   ; (34)
 	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_b_10mie:
-
+	ldd   ZL,      Y + 1   ; (53)
 	icall                  ; (70)
+	ldd   ZL,      Y + 0   ; (72)
 
-sp0_b_10end:
+sp1_b_10mie:
+
+	; --- (Display) ---
+	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
+	; -----------------
+	icall                  ; (89)
+
+sp1_b_10end:
 
 
-	; ( 249) Sprites 12/13
+	; ( 371) Sprites 12/13 (-10 cy)
 
-	lds   XL,      sprites + (13 * 8) + SP_YPOS
-	lds   YL,      v_sphgt + (13)
-	sub   XL,      r18
-	add   XL,      YL
-	lds   XL,      sprites + (12 * 8) + SP_YPOS
-	lds   YL,      v_sphgt + (12)
-	brcs  sp0_b_12act      ; (11 / 12) Sprite 12 has priority over Sprite 13
-	sub   XL,      r18
-	add   XL,      YL
-	brcc  sp0_b_13ina      ; (14 / 15)
+	add   r15,     r16
+	brcs  sp1_b_12act      ; (11 + 1 / 12 + 1) Sprite 12 has priority over Sprite 13
+	add   r0,      r20
+	brcc  sp1_b_13ina      ; (14 / 15)
 
 	; Sprite 13 renders
 
@@ -1309,22 +1226,24 @@ sp0_b_10end:
 	lds   r23,     sprites + (12 * 8) + SP_COL3
 	add   YL,      r1      ; (27)
 	sbrc  r25,     4       ; (28 / 29)
-	rjmp  sp0_b_12mir      ; (30)
+	rjmp  sp1_b_12mir      ; (30)
 
-sp0_b_12nor:
+sp1_b_12nor:
 
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
 	icall                  ; (49)
 	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_b_12mie      ; (53)
+	icall                  ; (68)
+	ldd   ZL,      Y + 2   ; (70)
+	rjmp  sp1_b_12mie      ; (72)
 
-sp0_b_13ina:
+sp1_b_13ina:
 
-	WAIT  YL,      53
-	rjmp  sp0_b_12end      ; (70)
+	WAIT  YL,      72
+	rjmp  sp1_b_12end      ; (89)
 
-sp0_b_12act:
+sp1_b_12act:
 
 	; Sprite 12 renders, Sprite 13 skips
 
@@ -1334,181 +1253,39 @@ sp0_b_12act:
 	lds   r21,     sprites + (13 * 8) + SP_COL1
 	lds   r22,     sprites + (13 * 8) + SP_COL2
 	lds   r23,     sprites + (13 * 8) + SP_COL3
-	add   YL,      r1      ; (25)
-	sbrc  r25,     5       ; (26 / 27)
-	rjmp  .+2              ; (28)
-	rjmp  sp0_b_12nor      ; (29)
-	rjmp  sp0_b_12mir      ; (30)
+	add   YL,      r1      ; (25 + 1)
+	sbrs  r25,     5       ; (26 + 1 / 27 + 1)
+	rjmp  sp1_b_12nor      ; (29)
+	rjmp  sp1_b_12mir      ; (30)
 
-sp0_b_12mir:
-
-	nop
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	ldd   ZL,      Y + 1   ; (34)
-	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_b_12mie:
-
-	icall                  ; (70)
-
-sp0_b_12end:
-
-
-	; ( 319) Preload
-
-	lds   r0,      sprites + (17 * 8) + SP_YPOS
-
-	; ( 321) Sprites 14/15
-
-	lds   XL,      sprites + (15 * 8) + SP_YPOS
-	lds   YL,      v_sphgt + (15)
-	sub   XL,      r18
-	add   XL,      YL
-	lds   XL,      sprites + (14 * 8) + SP_YPOS
-	lds   YL,      v_sphgt + (14)
-	brcs  sp0_b_14act      ; (11 / 12) Sprite 14 has priority over Sprite 15
-	sub   XL,      r18
-	add   XL,      YL
-	brcc  sp0_b_15ina      ; (14 / 15)
-
-	; Sprite 15 renders
-
-	lds   YL,      v_spoff + (14)
-	lds   YH,      sprites + (14 * 8) + SP_BANK
-	lds   XL,      sprites + (14 * 8) + SP_XPOS
-	lds   r21,     sprites + (14 * 8) + SP_COL1
-	lds   r22,     sprites + (14 * 8) + SP_COL2
-	lds   r23,     sprites + (14 * 8) + SP_COL3
-	add   YL,      r1      ; (27)
-	sbrc  r25,     6       ; (28 / 29)
-	rjmp  sp0_b_14mir      ; (30)
-
-sp0_b_14nor:
-
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	ldd   ZL,      Y + 0   ; (32)
-	; --- (Display) ---
-	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
-	; -----------------
-	icall                  ; (49)
-	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_b_14mie      ; (53)
-
-sp0_b_15ina:
-
-	WAIT  YL,      17
-	; --- (Display) ---
-	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
-	; -----------------
-	WAIT  YL,      36
-	rjmp  sp0_b_14end      ; (70)
-
-sp0_b_14act:
-
-	; Sprite 14 renders, Sprite 15 skips
-
-	lds   YL,      v_spoff + (15)
-	lds   YH,      sprites + (15 * 8) + SP_BANK
-	lds   XL,      sprites + (15 * 8) + SP_XPOS
-	lds   r21,     sprites + (15 * 8) + SP_COL1
-	lds   r22,     sprites + (15 * 8) + SP_COL2
-	lds   r23,     sprites + (15 * 8) + SP_COL3
-	add   YL,      r1      ; (25)
-	sbrc  r25,     7       ; (26 / 27)
-	rjmp  .+2              ; (28)
-	rjmp  sp0_b_14nor      ; (29)
-	rjmp  sp0_b_14mir      ; (30)
-
-sp0_b_14mir:
+sp1_b_12mir:
 
 	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	; --- (Display) ---
-	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
-	; -----------------
-	ldd   ZL,      Y + 1   ; (34)
+	ldd   ZL,      Y + 2   ; (34)
 	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
-
-sp0_b_14mie:
-
+	ldd   ZL,      Y + 1   ; (53)
 	icall                  ; (70)
+	ldd   ZL,      Y + 0   ; (72)
 
-sp0_b_14end:
+sp1_b_12mie:
+
+	icall                  ; (89)
+
+sp1_b_12end:
 
 
-	; ( 392) Sprites 16/17 (-2)
+	; ( 450) End
 
-	lds   YL,      v_sphgt + (17)
-	sub   r0,      r18
-	add   r0,      YL
-	lds   XL,      sprites + (16 * 8) + SP_YPOS
-	lds   YL,      v_sphgt + (16)
-	brcs  sp0_b_16act      ; (11 / 12) Sprite 16 has priority over Sprite 17
-	sub   XL,      r18
-	add   XL,      YL
-	brcc  sp0_b_17ina      ; (14 / 15)
-
-	; Sprite 17 renders
-
-	lds   YL,      v_spoff + (16)
-	lds   YH,      sprites + (16 * 8) + SP_BANK
-	lds   XL,      sprites + (16 * 8) + SP_XPOS
-	lds   r21,     sprites + (16 * 8) + SP_COL1
-	lds   r22,     sprites + (16 * 8) + SP_COL2
-	lds   r23,     sprites + (16 * 8) + SP_COL3
-	add   YL,      r1      ; (27)
-	sbic  GPR0,    4       ; (28 / 29)
-	rjmp  sp0_b_16mir      ; (30)
-
-sp0_b_16nor:
-
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	ldd   ZL,      Y + 0   ; (32)
-	icall                  ; (49)
-	ldd   ZL,      Y + 1   ; (51)
-	rjmp  sp0_b_16mie      ; (53)
-
-sp0_b_17ina:
-
-	WAIT  YL,      53
-	rjmp  sp0_b_16end      ; (70)
-
-sp0_b_16act:
-
-	; Sprite 16 renders, Sprite 17 skips
-
-	lds   YL,      v_spoff + (17)
-	lds   YH,      sprites + (17 * 8) + SP_BANK
-	lds   XL,      sprites + (17 * 8) + SP_XPOS
-	lds   r21,     sprites + (17 * 8) + SP_COL1
-	lds   r22,     sprites + (17 * 8) + SP_COL2
-	lds   r23,     sprites + (17 * 8) + SP_COL3
-	add   YL,      r1      ; (25)
-	sbic  GPR0,    5       ; (26 / 27)
-	rjmp  .+2              ; (28)
-	rjmp  sp0_b_16nor      ; (29)
-	rjmp  sp0_b_16mir      ; (30)
-
-sp0_b_16mir:
-
+	rjmp  .
+	rjmp  .
+	rjmp  .
 	nop
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-	ldd   ZL,      Y + 1   ; (34)
-	icall                  ; (51)
-	ldd   ZL,      Y + 0   ; (53)
 
-sp0_b_16mie:
+	; ( 457) Restore used color registers
 
-	icall                  ; (70)
-
-sp0_b_16end:
-
-
-	; ( 460) End
-
-	nop
+	lds   r15,     palette + 13
+	lds   r16,     palette + 14
 
 	; ( 461) Go on to next line
 
