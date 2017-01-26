@@ -542,6 +542,8 @@
 		#include "videoMode13/videoMode13.def.h"
 	#elif VIDEO_MODE == 14
 		#include "videoMode14/videoMode14.def.h"
+	#elif VIDEO_MODE == 72
+		#include "videoMode72/videoMode72.def.h"
 	#elif VIDEO_MODE == 74
 		#include "videoMode74/videoMode74.def.h"
 	#elif VIDEO_MODE == 90
