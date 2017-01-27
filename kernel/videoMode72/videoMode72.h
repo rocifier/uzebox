@@ -64,6 +64,7 @@ extern unsigned char  m72_tt_pad;
 extern unsigned char  m72_tt_hgt;
 extern unsigned char  m72_tt_bcol;
 extern unsigned char  m72_tt_fcol;
+extern unsigned char  m72_tt_col;
 extern unsigned char  m72_lt_col;
 
 extern unsigned char* m72_tb_vram;
@@ -72,6 +73,7 @@ extern unsigned char  m72_tb_pad;
 extern unsigned char  m72_tb_hgt;
 extern unsigned char  m72_tb_bcol;
 extern unsigned char  m72_tb_fcol;
+extern unsigned char  m72_tb_col;
 extern unsigned char  m72_lb_col;
 
 /* Provided by the user tileset */

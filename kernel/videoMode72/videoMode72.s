@@ -37,15 +37,15 @@
 ;
 ; Px0     Px16                                                   Px176   Px192
 ; +-------+----------------------------------------------------------+-------+
-; |       | Top boundary line: m72_lt_col                            |       |
+; |       | Top boundary line: m72_tt_col                            |       |
 ; |     --+----------------------------------------------------------+--     |
 ; |       |                                                          |       |
 ; |       | Text mode, top (40 tiles wide)                           |       |
 ; |       | m72_tt_vram:  Pointer to VRAM for this part              |       |
 ; |       | m72_tt_trows: Number of tile rows this part has          |       |
 ; |       | m72_tt_pad:   Padding in pixels to T.T boundary line     |       |
-; |       | m72_tt_hgt:   Height in pixels including padding and T.T |       |
-; |       |               boundary line                              |       |
+; |       | m72_tt_hgt:   Height in pixels including padding and     |       |
+; |       |               Top boundary line                          |       |
 ; |       | m72_tt_bcol:  Background color                           |       |
 ; |       | m72_tt_fcol:  Foreground color                           |       |
 ; |       |                                                          |       |
@@ -65,19 +65,19 @@
 ; |       | m72_tb_vram:  Pointer to VRAM for this part              |       |
 ; |       | m72_tb_trows: Number of tile rows this part has          |       |
 ; |       | m72_tb_pad:   Padding in pixels to T.B boundary line     |       |
-; |       | m72_tb_hgt:   Height in pixels including padding and T.B |       |
-; |       |               boundary line                              |       |
+; |       | m72_tb_hgt:   Height in pixels including padding and     |       |
+; |       |               Bottom boundary line                       |       |
 ; |       | m72_tb_bcol:  Background color                           |       |
 ; |       | m72_tb_fcol:  Foreground color                           |       |
 ; |       |                                                          |       |
 ; |     --+----------------------------------------------------------+--     |
-; |       | Bottom boundary line: m72_lb_col                         |       |
+; |       | Bottom boundary line: m72_tb_col                         |       |
 ; +-------+----------------------------------------------------------+-------+
 ;
-; The top & bottom boundary lines are always visible.
+; The T.T & T.B boundary lines are always visible.
 ;
-; Game area's logical size is render_lines_count - 2, located between the top
-; and bottom boundary lines. The text modes cover it up when their respective
+; Game area's logical size is render_lines_count - 2, located between the T.T
+; and T.B boundary lines. The text modes cover it up when their respective
 ; heights are nonzero. First visible line of the game area (without overlays)
 ; is 32.
 ;
@@ -155,7 +155,7 @@
 ;
 ; Selects configuration & sprite mode.
 ;
-; bit 0: Unused
+; bit 0: Ignore boundary line colors if set (uses border color instead)
 ; bit 1: Game area color 0 replace on every scanline if set
 ; bit 2: Border color replace / extend on every scanline if set
 ; bit 3: Text area background color replace on every scanline if set
@@ -167,6 +167,9 @@
 ; Border color replace / extend has effect even without M72_SCOLOR_ENA: this
 ; case in the game area, color 0 will replace the normal border color (so the
 ; normal border color will only be used for text overlays).
+;
+; Ignoring boundary line colors may be useful in combination with
+; M72_SCOLOR_ENA, allowing to color them using the color replaces.
 ;
 .global m72_config
 
@@ -197,6 +200,7 @@
 .global m72_tt_hgt
 .global m72_tt_bcol
 .global m72_tt_fcol
+.global m72_tt_col
 .global m72_lt_col
 
 ;
@@ -208,6 +212,7 @@
 .global m72_tb_hgt
 .global m72_tb_bcol
 .global m72_tb_fcol
+.global m72_tb_col
 .global m72_lb_col
 
 
@@ -313,6 +318,7 @@
 	m72_tt_hgt:    .space 1
 	m72_tt_bcol:   .space 1
 	m72_tt_fcol:   .space 1
+	m72_tt_col:    .space 1
 	m72_lt_col:    .space 1
 
 	m72_tb_vram:   .space 2
@@ -321,6 +327,7 @@
 	m72_tb_hgt:    .space 1
 	m72_tb_bcol:   .space 1
 	m72_tb_fcol:   .space 1
+	m72_tb_col:    .space 1
 	m72_lb_col:    .space 1
 
 	; Locals
@@ -685,13 +692,13 @@ pre_l1:
 	inc   r16              ; Begin line of game area
 	sub   r20,     r23     ; (1415) Remaining lines from the frame
 
-	; Bottom boundary line: should only be missing if there are no more
+	; T.B boundary line: should only be missing if there are no more
 	; scanlines to render (Z flag set if so)
 
 	ldi   r19,     1
 	brne  .+2
-	ldi   r19,     0       ; Bottom boundary line: None if no more lines
-	sts   V_TB_CBBL, r19
+	ldi   r19,     0       ; T.B boundary line: None if no more lines
+	sts   V_TB_CTBL, r19
 	breq  .+2
 	dec   r20              ; (1422) One less lines remaining
 
@@ -707,12 +714,12 @@ pre_l1:
 	brcc  .+2
 	mov   r23,     r20     ; Limit to this height
 	mov   r18,     r23
-	ldi   r19,     1       ; Size of T.B boundary line
+	ldi   r19,     1       ; Size of Bottom boundary line
 	cp    r18,     r19
 	brcc  .+2
 	mov   r19,     r18
 	sub   r18,     r19
-	sts   V_TB_CTBL, r19   ; T.B boundary line: Either 1 or 0 lines
+	sts   V_TB_CBBL, r19   ; Bottom boundary line: Either 1 or 0 lines
 	cp    r18,     r21
 	brcc  .+2
 	mov   r21,     r18     ; Padding lines
@@ -756,13 +763,12 @@ tt_tbl_entry:
 
 	; Draw top boundary line
 
-	WAIT  r20,     114     ; (1816)
+	WAIT  r20,     97      ; (1799)
 
 	; Load color
 
-	lds   r20,     m72_lt_col
-	sbic  GPR0,    2       ; Color 15 (border) loading enabled?
-	mov   r17,     r20     ; (1820 = 0) If so, load boundary line color
+	lds   r20,     m72_tt_col
+	rcall m72_bl_colors    ; (1820 = 0) (19 cycles)
 
 	; Generate line
 
@@ -920,7 +926,7 @@ tt_pad_loope:
 ;
 ga_tran_entry:
 
-	WAIT  r20,     45      ; (1766)
+	WAIT  r20,     28      ; (1749)
 
 	; Load game area palette into r2 - r16
 
@@ -940,25 +946,24 @@ ga_tran_entry:
 	ld    r13,     X+
 	ld    r14,     X+
 	ld    r15,     X+
-	ld    r16,     X+      ; (1798)
+	ld    r16,     X+      ; (1781)
 
 	; Prepare logical row counter. No scan line increment (r18) since it
 	; is pre-incremented in the game area scanline code.
 
 	lds   r19,     m72_ypos
 	add   r19,     r18     ; Compensate for possible overlay
-	subi  r19,     32      ; (1802)
+	subi  r19,     32      ; (1785)
 
 	; Prepare for line buffer fill
 
 	in    XH,      STACKH
-	ldi   XL,      32      ; (1804)
+	ldi   XL,      32      ; (1787)
 
 	; Load colors (T.T boundary line)
 
 	lds   r20,     m72_lt_col
-	sbic  GPR0,    2       ; Color 15 (border) loading enabled?
-	mov   r17,     r20     ; (1808) If so, load boundary line color
+	rcall m72_bl_colors    ; (1808) (19 cycles)
 
 	; Fill in line buffer for T.T boundary line
 
@@ -1060,13 +1065,12 @@ tb_tbl_entry:
 
 	; Draw top boundary line
 
-	WAIT  r20,     113     ; (1816)
+	WAIT  r20,     96      ; (1799)
 
 	; Load color
 
 	lds   r20,     m72_lb_col
-	sbic  GPR0,    2       ; Color 15 (border) loading enabled?
-	mov   r17,     r20     ; (1820 = 0) If so, load boundary line color
+	rcall m72_bl_colors    ; (1820 = 0) (19 cycles)
 
 	; Generate line
 
@@ -1220,13 +1224,12 @@ tb_bbl_entry:
 
 	; Draw top boundary line
 
-	WAIT  r20,     89      ; (1816)
+	WAIT  r20,     72      ; (1799)
 
 	; Load color
 
-	lds   r20,     m72_lb_col
-	sbic  GPR0,    2       ; Color 15 (border) loading enabled?
-	mov   r17,     r20     ; (1820 = 0) If so, load boundary line color
+	lds   r20,     m72_tb_col
+	rcall m72_bl_colors    ; (1820 = 0) (19 cycles)
 
 	; Generate line
 
@@ -1549,6 +1552,31 @@ m72_txtline:
 	clr   r22
 	out   PIXOUT,  r22     ; (1698) Black border begins
 	ret                    ; (1702)
+
+
+
+;
+; Boundary line color loads. In r20 the appropriate line color has to be
+; prepared.
+;
+m72_bl_colors:
+	lds   r21,     m72_config
+#if (M72_SCOLOR_ENA != 0)
+	mov   ZL,      r18
+	clr   ZH
+	subi  ZL,      lo8(m72_scolor - 31)
+	sbci  ZH,      hi8(m72_scolor - 31)
+	ld    ZL,      Z
+#else
+	rjmp  .
+	rjmp  .
+	lds   ZL,      bordercolor
+#endif
+	sbrc  r21,     0       ; Boundary line colors disabled?
+	mov   r20,     ZL      ; If so, use the border color
+	sbic  GPR0,    2       ; Color 15 (border) loading enabled?
+	mov   r17,     r20     ; If so, load boundary line color
+	ret                    ; (16)
 
 
 

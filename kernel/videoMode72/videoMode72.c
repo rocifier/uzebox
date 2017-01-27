@@ -52,8 +52,10 @@ void InitializeVideoMode(){
 	m72_tt_bcol  = 0x00U; /* Top text area background: black */
 	m72_tb_fcol  = 0xFFU; /* Bottom text area foreground: white */
 	m72_tb_bcol  = 0x00U; /* Bottom text area background: black */
-	m72_lt_col   = 0xFFU; /* Top boundary lines: white */
-	m72_lb_col   = 0xFFU; /* Bottom boundary lines: white */
+	m72_tt_col   = 0xFFU; /* Top boundary line: white */
+	m72_tb_col   = 0xFFU; /* Bottom boundary line: white */
+	m72_lt_col   = 0xFFU; /* T.T boundary line: white */
+	m72_lb_col   = 0xFFU; /* T.B boundary line: white */
 
 }
 
