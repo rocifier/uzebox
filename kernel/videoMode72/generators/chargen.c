@@ -73,11 +73,11 @@ int main(void)
  printf(".section M72_ALIGNED_SEC\n");
  printf("\n");
  printf("\n");
- printf(".global charrom\n");
+ printf(".global m72_charrom_data\n");
  printf("\n");
  printf(".balign 256\n");
  printf("\n");
- printf("charrom:\n");
+ printf("m72_charrom_data:\n");
 
  /* Process image data */
 

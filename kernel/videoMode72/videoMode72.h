@@ -76,7 +76,8 @@ extern unsigned char  m72_tb_fcol;
 extern unsigned char  m72_tb_col;
 extern unsigned char  m72_lb_col;
 
-/* Provided by the user tileset */
+/* Provided by the user tileset & character ROM */
 
 extern const unsigned char m72_defpalette[];
 extern const unsigned int  m72_deftilerows[];
+extern const unsigned char M72_DEF_CHARROM[];

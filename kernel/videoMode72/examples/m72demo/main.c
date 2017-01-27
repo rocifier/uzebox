@@ -24,8 +24,6 @@
 
 
 
-extern unsigned const char charrom[];
-
 static const unsigned char sprdata[] PROGMEM = {
 
  0b00000011U, 0b11111111U,
@@ -157,7 +155,6 @@ int main(){
 	m72_tb_trows = 2U;
 	m72_tt_vram = (unsigned char*)(0x900U);
 	m72_tb_vram = (unsigned char*)(0x928U);
-	m72_charrom = ((unsigned int)(&(charrom[0]))) >> 8;
 	bordercolor = 0x52U;
 
 	m72_config = 0x04U; /* Sprite mode 0 */

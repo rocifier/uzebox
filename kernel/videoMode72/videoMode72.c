@@ -56,6 +56,7 @@ void InitializeVideoMode(){
 	m72_tb_col   = 0xFFU; /* Bottom boundary line: white */
 	m72_lt_col   = 0xFFU; /* T.T boundary line: white */
 	m72_lb_col   = 0xFFU; /* T.B boundary line: white */
+	m72_charrom  = ((unsigned int)(&(M72_DEF_CHARROM[0]))) >> 8;
 
 }
 
