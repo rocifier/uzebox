@@ -116,6 +116,7 @@ static const unsigned char txt_data[] PROGMEM = {
 int main(){
 
 	unsigned char i;
+	unsigned char j;
 	unsigned char ct;
 	unsigned int  yp[18];
 	unsigned int  xp[18];
@@ -137,7 +138,7 @@ int main(){
 
 	for (i = 0U; i < 32U; i++){
 
-		m72_rowoff[i] = (0xA00U + ((unsigned int)(i) * 32U)) << 3;
+		m72_rowoff[i] = 0xA00U + ((unsigned int)(i) * 32U);
 
 	}
 
@@ -200,12 +201,14 @@ int main(){
 		/* Bg. scrolling */
 
 		if ((ct & 0x80U) == 0U){
+			j = (ct >> 1);
 			for (i = 0U; i < 32U; i++){
-				m72_rowoff[i] = ((0xA00U + ((unsigned int)(i) * 32U)) << 3) + (ct >> 1);
+				m72_rowoff[i] = (0xA00U + ((unsigned int)(i) * 32U)) + (j >> 3) + ((unsigned int)(j & 7U) << 12);
 			}
 		}else{
+			j = 0x80U - (ct >> 1);
 			for (i = 0U; i < 32U; i++){
-				m72_rowoff[i] = ((0xA00U + ((unsigned int)(i) * 32U)) << 3) + 0x80U - (ct >> 1);
+				m72_rowoff[i] = (0xA00U + ((unsigned int)(i) * 32U)) + (j >> 3) + ((unsigned int)(j & 7U) << 12);
 			}
 		}
 

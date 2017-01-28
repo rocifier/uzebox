@@ -143,10 +143,11 @@
 ;
 ; unsigned int m72_rowoff[];
 ;
-; Row start offsets in pixels (bits 3-15: RAM offset; bits 0-2: Scroll). This
-; can be used to set up the VRAM for the game area background. Normally it has
-; 32 entries to set up 32 individual tile rows, but with M72_USE_LINE_ADDR it
-; may be configured to have as many entries as many scanlines are used.
+; Row start offsets in pixels (bits 0-11: RAM offset; bits 12-14: Scroll).
+; This can be used to set up the VRAM for the game area background. Normally
+; it has 32 entries to set up 32 individual tile rows, but with
+; M72_USE_LINE_ADDR it may be configured to have as many entries as many
+; scanlines are used.
 ;
 .global m72_rowoff
 
@@ -926,9 +927,11 @@ tt_pad_loope:
 ;
 ga_tran_entry:
 
-	WAIT  r20,     28      ; (1749)
+	WAIT  r20,     34      ; (1755)
 
-	; Load game area palette into r2 - r16
+	; Load game area palette into r2 - r13 (r14, r15 and r16 will be
+	; loaded with colors 12, 13 and 14 within the scanline code, to allow
+	; using these registers in sprite modes).
 
 	ldi   XL,      lo8(palette)
 	ldi   XH,      hi8(palette)
@@ -943,10 +946,7 @@ ga_tran_entry:
 	ld    r10,     X+
 	ld    r11,     X+
 	ld    r12,     X+
-	ld    r13,     X+
-	ld    r14,     X+
-	ld    r15,     X+
-	ld    r16,     X+      ; (1781)
+	ld    r13,     X+      ; (1781)
 
 	; Prepare logical row counter. No scan line increment (r18) since it
 	; is pre-incremented in the game area scanline code.
@@ -1451,24 +1451,24 @@ m72_graf_scan_b:
 	pop   r0
 	out   PIXOUT,  r0      ; ( 550) Pixel 12
 	ld    YH,      Z+
-	ldi   XL,      32      ; No scroll begin offset in line buffer (scroll: 25 - 32)
-	lsr   YH
+	mov   XL,      YH
+	andi  YH,      0x0F    ; Y: VRAM offset
 	pop   r0
 	out   PIXOUT,  r0      ; ( 557) Pixel 13
-	ror   YL
-	sbci  XL,      0
-	lsr   YH
-	ror   YL
+	swap  XL
+	andi  XL,      0x07
+	neg   XL
+	subi  XL,      224     ; Adds 32, so scroll became 0-7 pixels left shift
 	pop   r0
 	out   PIXOUT,  r0      ; ( 564) Pixel 14
-	brcc  .+2
-	subi  XL,      2
-	lsr   YH
-	ror   YL
+
+	; Reload palette entries 12 - 14, which regs could be used by sprites
+
+	lds   r14,     palette + 12
+	lds   r15,     palette + 13
 	pop   r0
 	out   PIXOUT,  r0      ; ( 571) Pixel 15
-	brcc  .+2
-	subi  XL,      4
+	lds   r16,     palette + 14
 
 	; Jump to appropriate tile row render code
 
