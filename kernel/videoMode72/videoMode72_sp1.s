@@ -54,7 +54,9 @@
 ; Registers:
 ;
 ;  r1: r0: Temp
-;  r2-r17: Background colors (r17: border)
+;  r2-r13: Background colors
+; r14-r16: Temp
+; r17:     Border color
 ; r18:     Physical scanline (use to check sprite Y)
 ; r19:     Log. scanline (no usage)
 ; r20-r23: Temp
@@ -125,8 +127,6 @@ sp1_ypr_l:
 
 ;
 ; Entry point A
-;
-; Uses r15 & r16 which it reloads from palette + 13 & 14 upon return
 ;
 m72_sp1_a:
 
@@ -693,12 +693,9 @@ sp1_a_12end:
 	rjmp  .
 	rjmp  .
 	rjmp  .
+	rjmp  .
+	rjmp  .
 	nop
-
-	; ( 457) Restore used color registers
-
-	lds   r15,     palette + 13
-	lds   r16,     palette + 14
 
 	; ( 461) Go on to next line
 
@@ -712,8 +709,6 @@ sp1_a_12end:
 
 ;
 ; Entry point B
-;
-; Uses r15 & r16 which it reloads from palette + 13 & 14 upon return
 ;
 m72_sp1_b:
 
@@ -1280,12 +1275,9 @@ sp1_b_12end:
 	rjmp  .
 	rjmp  .
 	rjmp  .
+	rjmp  .
+	rjmp  .
 	nop
-
-	; ( 457) Restore used color registers
-
-	lds   r15,     palette + 13
-	lds   r16,     palette + 14
 
 	; ( 461) Go on to next line
 

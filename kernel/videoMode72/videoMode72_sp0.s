@@ -54,7 +54,9 @@
 ; Registers:
 ;
 ;  r1: r0: Temp
-;  r2-r17: Background colors (r17: border)
+;  r2-r13: Background colors
+; r14-r16: Temp
+; r17:     Border color
 ; r18:     Physical scanline (use to check sprite Y)
 ; r19:     Log. scanline (no usage)
 ; r20-r23: Temp
