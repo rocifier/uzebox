@@ -73,7 +73,7 @@
 ;
 ; Return sequence (after last cycle):
 ;
-; ldi   ZL,      31
+; ldi   ZL,      15
 ; out   SPL,     ZL
 ; pop   r0
 ; out   PIXOUT,  r0      ; ( 466) Pixel 0
@@ -696,7 +696,7 @@ sp5_a_12end:
 
 	; ( 461) Go on to next line
 
-	ldi   ZL,      31
+	ldi   ZL,      15
 	out   STACKL,  ZL
 	pop   r0
 	out   PIXOUT,  r0      ; ( 466) Pixel 0
@@ -1257,7 +1257,7 @@ sp5_b_12end:
 
 	; ( 461) Go on to next line
 
-	ldi   ZL,      31
+	ldi   ZL,      15
 	out   STACKL,  ZL
 	pop   r0
 	out   PIXOUT,  r0      ; ( 466) Pixel 0

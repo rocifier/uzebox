@@ -104,7 +104,7 @@
 ; 20 sprites. Their structure is as follows:
 ; off:    Sprite start offset within its memory bank
 ; bank:   Memory bank of sprite (high byte of RAM address)
-; xpos:   X position, 32: Left edge
+; xpos:   X position, 16: Left edge
 ; ypos:   Y position, 32: Top edge
 ; height: Sprite height and X mirror flag on bit 7
 ; col1:   Color of '1' pixels (BBGGGRRR byte)
@@ -534,7 +534,7 @@ sub_video_mode72:
 	out   GPR0,    r0      ; ( 687)
 
 	; Cancel sprite heights for invisible sprites by allowing a maximal
-	; XPOS of 191 (so line buffer 224 - 255 remains free)
+	; XPOS of 175 (so line buffer 192 - 255 remains free)
 
 	ldi   XL,      lo8(sprites + SP_XPOS)
 	ldi   XH,      hi8(sprites + SP_XPOS)
@@ -544,7 +544,7 @@ sub_video_mode72:
 pre_l0:
 	ld    r16,     X
 	adiw  XL,      8
-	cpi   r16,     192
+	cpi   r16,     176
 	brcs  .+2
 	st    Y+,      r0
 	brcc  .+2
@@ -958,7 +958,7 @@ ga_tran_entry:
 	; Prepare for line buffer fill
 
 	in    XH,      STACKH
-	ldi   XL,      32      ; (1787)
+	ldi   XL,      16      ; (1787)
 
 	; Load colors (T.T boundary line)
 
@@ -995,7 +995,7 @@ ga_tran_entry:
 	rcall gap_t8           ; ( 438)
 	rcall gap_t8           ; ( 461)
 
-	ldi   ZL,      31
+	ldi   ZL,      15
 	out   STACKL,  ZL
 	pop   r0
 	out   PIXOUT,  r0      ; ( 466) Pixel 0
@@ -1321,7 +1321,7 @@ m72_graf_scan_b:
 	;
 	; Entry must be made as follows:
 	;
-	; ldi   ZL,      31
+	; ldi   ZL,      15
 	; out   STACKL,  ZL
 	; pop   r0
 	; out   PIXOUT,  r0      ; ( 466) Pixel 0
@@ -1458,7 +1458,7 @@ m72_graf_scan_b:
 	swap  XL
 	andi  XL,      0x07
 	neg   XL
-	subi  XL,      224     ; Adds 32, so scroll became 0-7 pixels left shift
+	subi  XL,      240     ; Adds 16, so scroll became 0-7 pixels left shift
 	pop   r0
 	out   PIXOUT,  r0      ; ( 564) Pixel 14
 

@@ -169,9 +169,9 @@ int main(){
 		}else{
 			yp[i] = (104U + ((i >> 1) * 1U)) << 8;
 		}
-		xp[i] = (40U + ((i >> 1) * 13U)) << 8;
+		xp[i] = (24U + ((i >> 1) * 13U)) << 8;
 
-		sprites[i].xpos   = 40U + (i * 5U);
+		sprites[i].xpos   = 24U + (i * 5U);
 		sprites[i].ypos   = yp[i] >> 8;
 		sprites[i].off    = (i & 0x3U) * 16U;
 		sprites[i].bank   = 0xEU;

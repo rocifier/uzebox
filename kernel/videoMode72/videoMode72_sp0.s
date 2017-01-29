@@ -69,7 +69,7 @@
 ;
 ; Return sequence (after last cycle):
 ;
-; ldi   ZL,      31
+; ldi   ZL,      15
 ; out   SPL,     ZL
 ; pop   r0
 ; out   PIXOUT,  r0      ; ( 466) Pixel 0
@@ -467,7 +467,7 @@ sp0_a_08nor:
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
 	; --- (Display) ---
-	sbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes high
+	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
 	; -----------------
 	icall                  ; (49)
 	ldd   ZL,      Y + 1   ; (51)
@@ -477,7 +477,7 @@ sp0_a_09ina:
 
 	WAIT  YL,      17
 	; --- (Display) ---
-	sbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes high
+	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
 	; -----------------
 	WAIT  YL,      36
 	rjmp  sp0_a_08end      ; (70)
@@ -503,7 +503,7 @@ sp0_a_08mir:
 	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
 	; --- (Display) ---
-	sbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes high
+	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
 	; -----------------
 	ldd   ZL,      Y + 1   ; (34)
 	icall                  ; (51)
@@ -811,7 +811,7 @@ sp0_a_16end:
 
 	; ( 461) Go on to next line
 
-	ldi   ZL,      31
+	ldi   ZL,      15
 	out   STACKL,  ZL
 	pop   r0
 	out   PIXOUT,  r0      ; ( 466) Pixel 0
@@ -1162,7 +1162,7 @@ sp0_b_08nor:
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	ldd   ZL,      Y + 0   ; (32)
 	; --- (Display) ---
-	sbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes high
+	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
 	; -----------------
 	icall                  ; (49)
 	ldd   ZL,      Y + 1   ; (51)
@@ -1172,7 +1172,7 @@ sp0_b_09ina:
 
 	WAIT  YL,      17
 	; --- (Display) ---
-	sbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes high
+	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
 	; -----------------
 	WAIT  YL,      36
 	rjmp  sp0_b_08end      ; (70)
@@ -1198,7 +1198,7 @@ sp0_b_08mir:
 	nop
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
 	; --- (Display) ---
-	sbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes high
+	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
 	; -----------------
 	ldd   ZL,      Y + 1   ; (34)
 	icall                  ; (51)
@@ -1506,7 +1506,7 @@ sp0_b_16end:
 
 	; ( 461) Go on to next line
 
-	ldi   ZL,      31
+	ldi   ZL,      15
 	out   STACKL,  ZL
 	pop   r0
 	out   PIXOUT,  r0      ; ( 466) Pixel 0
