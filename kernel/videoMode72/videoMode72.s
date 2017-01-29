@@ -243,37 +243,43 @@
 
 ; Various variables at the line buffer's end
 ; Line buffer:
-;   0 -  31: Non-visible left pixels
-;  32 - 191: Visible pixels (160)
-; 192 - 223: Non-visible right pixels
+;   0 -  15: Non-visible left pixels
+;  16 - 175: Visible pixels (160)
+; 176 - 191: Non-visible right pixels
 
 ; Sprite processing codes A / B (A may be used to access B)
 #define LB_SPR_B       254
 #define LB_SPR_A       252
-; Top of video stack (init STACKL to this - 1)
+; Top of video stack (init STACKL to this - 1), 4 bytes (2 call levels)
 #define LB_STACK       252
+; Adjusted sprite offsets for their start scanline
+#define LB_SPOFF       192
+; Sprite heights (with removed X mirror flags)
+#define LB_SPHGT       212
 ; Saved registers
-#define LB_S_GP0       224
-#define LB_S_GP1       225
-#define LB_S_GP2       226
-#define LB_S_SPL       227
-#define LB_S_SPH       228
+#define LB_S_GP0       232
+#define LB_S_GP1       233
+#define LB_S_GP2       234
+#define LB_S_SPL       235
+#define LB_S_SPH       236
 ; Top text area calculated dimensions
-#define LB_TT_CTBL     229
-#define LB_TT_CEXT     230
-#define LB_TT_CROW     231
-#define LB_TT_CPAD     232
-#define LB_TT_CBBL     233
+#define LB_TT_CTBL     237
+#define LB_TT_CEXT     238
+#define LB_TT_CROW     239
+#define LB_TT_CPAD     240
+#define LB_TT_CBBL     241
 ; Bottom text area calculated dimensions
-#define LB_TB_CTBL     234
-#define LB_TB_CEXT     235
-#define LB_TB_CROW     236
-#define LB_TB_CPAD     237
-#define LB_TB_CBBL     238
+#define LB_TB_CTBL     242
+#define LB_TB_CEXT     243
+#define LB_TB_CROW     244
+#define LB_TB_CPAD     245
+#define LB_TB_CBBL     246
 ; Flipping for sprites
-#define LB_FLIP        239
+#define LB_FLIP        247
 
 ; Full variable offsets
+#define v_spoff        (M72_LBUFFER_OFF + LB_SPOFF)
+#define v_sphgt        (M72_LBUFFER_OFF + LB_SPHGT)
 #define V_S_GP0        (M72_LBUFFER_OFF + LB_S_GP0)
 #define V_S_GP1        (M72_LBUFFER_OFF + LB_S_GP1)
 #define V_S_GP2        (M72_LBUFFER_OFF + LB_S_GP2)
@@ -331,10 +337,7 @@
 	m72_tb_col:    .space 1
 	m72_lb_col:    .space 1
 
-	; Locals
 
-	v_spoff:       .space 20         ; Adjusted sprite offsets for their start scanline
-	v_sphgt:       .space 20         ; Sprite heights (with removed X mirror flags)
 
 .section .text
 
