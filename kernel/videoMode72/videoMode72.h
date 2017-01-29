@@ -43,38 +43,43 @@ typedef struct{
 
 /* Provided by VideoMode72.s */
 
-extern sprite_t       sprites[20];
-extern unsigned char  palette[16];
-extern unsigned char  bordercolor;
+extern volatile sprite_t       sprites[20];
+extern volatile unsigned char  palette[16];
+extern volatile unsigned char  bordercolor;
 #if (M72_SCOLOR_ENA != 0)
-extern unsigned char  m72_scolor[M72_MAXHEIGHT];
+extern volatile unsigned char  m72_scolor[M72_MAXHEIGHT];
 #endif
 #if (M72_USE_LINE_ADDR != 0)
-extern unsigned int   m72_rowoff[M72_LINE_ADDR_ROWS];
+extern volatile unsigned int   m72_rowoff[M72_LINE_ADDR_ROWS];
 #else
-extern unsigned int   m72_rowoff[32];
+extern volatile unsigned int   m72_rowoff[32];
 #endif
-extern unsigned char  m72_config;
-extern unsigned char  m72_ypos;
-extern unsigned char  m72_charrom;
+extern volatile unsigned char  m72_config;
+extern volatile unsigned char  m72_ypos;
+extern volatile unsigned char  m72_charrom;
 
-extern unsigned char* m72_tt_vram;
-extern unsigned char  m72_tt_trows;
-extern unsigned char  m72_tt_pad;
-extern unsigned char  m72_tt_hgt;
-extern unsigned char  m72_tt_bcol;
-extern unsigned char  m72_tt_fcol;
-extern unsigned char  m72_tt_col;
-extern unsigned char  m72_lt_col;
+extern volatile unsigned char* m72_tt_vram;
+extern volatile unsigned char  m72_tt_trows;
+extern volatile unsigned char  m72_tt_pad;
+extern volatile unsigned char  m72_tt_hgt;
+extern volatile unsigned char  m72_tt_bcol;
+extern volatile unsigned char  m72_tt_fcol;
+extern volatile unsigned char  m72_tt_col;
+extern volatile unsigned char  m72_lt_col;
 
-extern unsigned char* m72_tb_vram;
-extern unsigned char  m72_tb_trows;
-extern unsigned char  m72_tb_pad;
-extern unsigned char  m72_tb_hgt;
-extern unsigned char  m72_tb_bcol;
-extern unsigned char  m72_tb_fcol;
-extern unsigned char  m72_tb_col;
-extern unsigned char  m72_lb_col;
+extern volatile unsigned char* m72_tb_vram;
+extern volatile unsigned char  m72_tb_trows;
+extern volatile unsigned char  m72_tb_pad;
+extern volatile unsigned char  m72_tb_hgt;
+extern volatile unsigned char  m72_tb_bcol;
+extern volatile unsigned char  m72_tb_fcol;
+extern volatile unsigned char  m72_tb_col;
+extern volatile unsigned char  m72_lb_col;
+
+extern volatile unsigned int   m72_reset;
+
+extern void M72_Halt(void);
+extern void M72_Seq(void);
 
 /* Provided by the user tileset & character ROM */
 

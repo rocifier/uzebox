@@ -165,3 +165,13 @@
 #ifndef M72_DEF_CHARROM
 #define M72_DEF_CHARROM    m72_charrom_data
 #endif
+
+/*
+** Highest offset of stack to use after a reset (m72_reset set to non-null, so
+** upon every frame the main program restarts with a given function). You
+** should probably leave this alone (pointing at the line buffer's bank, thus
+** saving RAM when using the reset feature).
+*/
+#ifndef M72_RESET_STACK
+#define M72_RESET_STACK    (M72_LBUFFER_OFF + 255)
+#endif

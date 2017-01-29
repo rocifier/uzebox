@@ -193,6 +193,39 @@
 .global m72_charrom
 
 ;
+; unsigned int m72_reset;
+;
+; Reset vector where the video frame render will reset upon return with an
+; empty stack. It should be a function with void parameters and void return.
+; If this is set zero, the feature is turned off. If the feature is used, then
+; the stack will be reset to M72_RESET_STACK (by default this is the line
+; buffer's bank, thus freeing the previous location of the stack).
+;
+.global m72_reset
+
+;
+; void M72_Halt(void);
+;
+; Halts program execution. Use with reset (m72_reset non-null) to terminate
+; components which are supposed to be terminated by a new frame. This is not
+; required, but by the C language a function call is necessary to enforce a
+; sequence point (so every side effect completes before the call including
+; writes to any globals).
+;
+.global M72_Halt
+
+;
+; void M72_Seq(void);
+;
+; Sequence point. Use with reset (m72_reset non-null) to enforce a sequence
+; point, so everything is carried out which is before. This is not required,
+; but by the C language a function call is necessary to enforce a sequence
+; point (so every side effect completes before the call including writes to
+; any globals).
+;
+.global M72_Seq
+
+;
 ; Top text area parameters. See Graphics frame structure.
 ;
 .global m72_tt_vram
@@ -337,6 +370,7 @@
 	m72_tb_col:    .space 1
 	m72_lb_col:    .space 1
 
+	m72_reset:     .space 2
 
 
 .section .text
@@ -1291,7 +1325,14 @@ fr_leadout:
 	lds   r0,      V_S_SPL
 	out   STACKL,  r0      ; (  61)
 
-	WAIT  r20,     78
+	; Prepare for frame reset check
+
+	lds   r24,     m72_reset + 0
+	lds   r25,     m72_reset + 1
+
+	; Generate sync
+
+	WAIT  r20,     74
 	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
 
 	; Clear any pending timer interrupt
@@ -1299,7 +1340,20 @@ fr_leadout:
 	ldi   ZL,      (1<<OCF1A)
 	sts   _SFR_MEM_ADDR(TIFR1), ZL
 
-	ret
+	; Determine return path (normal or reset)
+
+	mov   r1,      r24
+	or    r1,      r25
+	brne  .+2              ; Nonzero: Perform a reset to the given address
+	ret                    ; Zero: Normal video mode return
+	ldi   r22,     lo8(M72_RESET_STACK)
+	ldi   r23,     hi8(M72_RESET_STACK)
+	out   STACKL,  r22
+	out   STACKH,  r23
+	clr   r1               ; Clear r1 for C
+	push  r24
+	push  r25              ; Push return address onto stack
+	reti                   ; End of frame interrupt (bypassing kernel)
 
 
 
@@ -1755,6 +1809,36 @@ bts_exitf:
 	out   STACKL,  ZL      ; (1629)
 	ret                    ; (1633)
 #endif
+
+
+
+;
+; void M72_Halt(void);
+;
+; Halts program execution. Use with reset (m72_reset non-null) to terminate
+; components which are supposed to be terminated by a new frame. This is not
+; required, but by the C language a function call is necessary to enforce a
+; sequence point (so every side effect completes before the call including
+; writes to any globals).
+;
+.section .text.M72_Halt
+M72_Halt:
+	rjmp  M72_Halt
+
+
+
+;
+; void M72_Seq(void);
+;
+; Sequence point. Use with reset (m72_reset non-null) to enforce a sequence
+; point, so everything is carried out which is before. This is not required,
+; but by the C language a function call is necessary to enforce a sequence
+; point (so every side effect completes before the call including writes to
+; any globals).
+;
+.section .text.M72_Seq
+M72_Seq:
+	ret
 
 
 
