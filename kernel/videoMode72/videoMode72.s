@@ -174,6 +174,19 @@
 ;
 .global m72_config
 
+#if (M72_USE_XPOS != 0)
+;
+; unsigned char m72_xpos;
+;
+; X position for game area background.
+;
+; Sets the left shift by 0 - 7 pixels for the game area background (only if
+; this feature is enabled, otherwise X fine scrolling is done by the
+; m72_rowoff offset table).
+;
+.global m72_xpos
+#endif
+
 ;
 ; unsigned char m72_ypos;
 ;
@@ -349,6 +362,9 @@
 #endif
 
 	m72_config:    .space 1          ; Mode 72 configuration
+#if (M72_USE_XPOS != 0)
+	m72_xpos:      .space 1          ; X position for game background
+#endif
 	m72_ypos:      .space 1          ; Y position for game background
 	m72_charrom:   .space 1          ; Character generator ROM address high
 
@@ -1472,7 +1488,8 @@ m72_graf_scan_b:
 	out   GPR1,    r2      ; Extend color 0 into border if no M72_SCOLOR_ENA
 #endif
 
-	; Flip sprite priority for interlacing (GPIOR0 bit 0)
+	; Flip sprite priority for interlacing (GPIOR0 bit 0). Note: ZH must
+	; contain 1 as it will be used below.
 
 	ldi   ZH,      0x01
 	pop   r0
@@ -1487,35 +1504,52 @@ m72_graf_scan_b:
 	mov   ZL,      r19
 	pop   r0
 	out   PIXOUT,  r0      ; ( 536) Pixel 10
-	clr   ZH
 #if (M72_USE_LINE_ADDR != 0)
-	nop
+	clr   ZH
 	lsl   ZL
 	rol   ZH
+	subi  ZL,      lo8(-(m72_rowoff))
+	pop   r0
+	out   PIXOUT,  r0      ; ( 543) Pixel 11
+	sbci  ZH,      hi8(-(m72_rowoff))
 #else
 	lsr   ZL
 	lsr   ZL
 	andi  ZL,      0x3E
-#endif
+	subi  ZL,      lo8(-(m72_rowoff - 0x0100))
 	pop   r0
 	out   PIXOUT,  r0      ; ( 543) Pixel 11
-	subi  ZL,      lo8(-(m72_rowoff))
-	sbci  ZH,      hi8(-(m72_rowoff))
+	sbci  ZH,      hi8(-(m72_rowoff - 0x0100))
+#endif
 
 	; Calculate VRAM entry offset & pixel (X scroll)
 
+#if (M72_USE_XPOS == 0)
 	ld    YL,      Z+
+	nop
 	pop   r0
 	out   PIXOUT,  r0      ; ( 550) Pixel 12
 	ld    YH,      Z+
-	mov   XL,      YH
+	mov   ZL,      YH
 	andi  YH,      0x0F    ; Y: VRAM offset
 	pop   r0
 	out   PIXOUT,  r0      ; ( 557) Pixel 13
-	swap  XL
-	andi  XL,      0x07
-	neg   XL
-	subi  XL,      240     ; Adds 16, so scroll became 0-7 pixels left shift
+	swap  ZL
+	ldi   XL,      16
+#else
+	ld    YL,      Z+
+	nop
+	pop   r0
+	out   PIXOUT,  r0      ; ( 550) Pixel 12
+	ld    YH,      Z+
+	nop
+	ldi   XL,      16
+	pop   r0
+	out   PIXOUT,  r0      ; ( 557) Pixel 13
+	lds   ZL,      m72_xpos
+#endif
+	andi  ZL,      0x07
+	sub   XL,      ZL      ; 0-7 pixels left shift
 	pop   r0
 	out   PIXOUT,  r0      ; ( 564) Pixel 14
 

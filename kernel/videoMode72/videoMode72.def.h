@@ -142,6 +142,15 @@
 #endif
 
 /*
+** Use X position. This disables the parallax scrolling capability to offer a
+** simpler interface (you can specify an X shift to the left by 0 - 7 pixels
+** in m72_xpos instead of having to write all VRAM row offsets).
+*/
+#ifndef M72_USE_XPOS
+#define M72_USE_XPOS       0
+#endif
+
+/*
 ** The name of an 512 byte aligned section if you use one. By defining such a
 ** section, you can pack Mode 72's 512 byte aligned data together, saving ROM
 ** space.

@@ -55,6 +55,9 @@ extern volatile unsigned int   m72_rowoff[M72_LINE_ADDR_ROWS];
 extern volatile unsigned int   m72_rowoff[32];
 #endif
 extern volatile unsigned char  m72_config;
+#if (M72_USE_XPOS != 0)
+extern volatile unsigned char  m72_xpos;
+#endif
 extern volatile unsigned char  m72_ypos;
 extern volatile unsigned char  m72_charrom;
 

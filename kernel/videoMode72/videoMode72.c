@@ -58,6 +58,11 @@ void InitializeVideoMode(){
 	m72_lb_col   = 0xFFU; /* T.B boundary line: white */
 	m72_charrom  = ((unsigned int)(&(M72_DEF_CHARROM[0]))) >> 8;
 	m72_reset    = 0U;    /* Frame reset disabled */
+#if (M72_USE_XPOS != 0)
+	m72_xpos     = 0U;    /* Game area bg. X position: 0 */
+#endif
+	m72_ypos     = 0U;    /* Game area bg. Y position: 0 */
+
 
 }
 
