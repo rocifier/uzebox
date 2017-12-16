@@ -114,11 +114,9 @@ static void gen_common(unsigned int no, unsigned int ext)
  printf("\tin    r2,      GPR1    ; (1623) If so, load it\n");
  printf("\tsbic  GPR0,    2       ; (1624) Color 15 (border) loading enabled?\n");
  printf("\tin    r17,     GPR1    ; (1625) If so, load it\n");
- printf("\tldi   ZL,      LB_SPR_B - 1 ; (1626) 254(HI):255(LO): Sprite conf B\n");
- printf("\tsbic  GPR0,    0       ; (1627)\n");
- printf("\tldi   ZL,      LB_SPR_A - 1 ; (1628) 252(HI):253(LO): Sprite conf A\n");
- printf("\tout   STACKL,  ZL      ; (1629)\n");
- printf("\tret                    ; (1633)\n");
+ printf("\tldi   ZL,      LB_SPR - 1 ; (1626) 254(HI):255(LO): Sprite conf\n");
+ printf("\tout   STACKL,  ZL      ; (1627)\n");
+ printf("\tret                    ; (1631)\n");
  printf("\n");
 }
 
@@ -329,8 +327,7 @@ int main(void)
  printf("#define  GPR0     _SFR_IO_ADDR(GPIOR0)\n");
  printf("#define  GPR1     _SFR_IO_ADDR(GPIOR1)\n");
  printf("#define  STACKL   0x3D\n");
- printf("#define  LB_SPR_B 254\n");
- printf("#define  LB_SPR_A 252\n");
+ printf("#define  LB_SPR   254\n");
  printf("#ifndef  M72_ALIGNED_SEC\n");
  printf("#define  M72_ALIGNED_SEC .text\n");
  printf("#endif\n");

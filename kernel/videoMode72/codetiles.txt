@@ -27,11 +27,9 @@ tilerow_exit:
 	in    r2,      GPR1    ; (1623) If so, load it
 	sbic  GPR0,    2       ; (1624) Color 15 (border) loading enabled?
 	in    r17,     GPR1    ; (1625) If so, load it
-	ldi   ZL,      LB_SPR_B - 1 ; (1626) 254(HI):255(LO): Sprite conf B
-	sbic  GPR0,    0       ; (1627)
-	ldi   ZL,      LB_SPR_A - 1 ; (1628) 252(HI):253(LO): Sprite conf A
-	out   STACKL,  ZL      ; (1629)
-	ret                    ; (1633)
+	ldi   ZL,      LB_SPR - 1 ; (1626) 254(HI):255(LO): Sprite conf
+	out   STACKL,  ZL      ; (1627)
+	ret                    ; (1631)
 
 The border must be started at cycle 1585 (the out finishing in 1586).
 

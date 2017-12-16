@@ -27,7 +27,7 @@
 /* Callback invoked by UzeboxCore.Initialize() */
 void InitializeVideoMode(){
 
-	unsigned char i;
+	u8 i;
 
 	for (i = 0U; i < 16U; i++)
 	{
@@ -62,8 +62,17 @@ void InitializeVideoMode(){
 	m72_xpos     = 0U;    /* Game area bg. X position: 0 */
 #endif
 	m72_ypos     = 0U;    /* Game area bg. Y position: 0 */
+	m72_bull_cnt = 0U;    /* Count of bullet sprites */
+	m72_bull_end.ypos   = 0U;
+	m72_bull_end.height = 0U;
 
+	/* Fill in sprite and bullet pointers to empty */
 
+	for (i = 0U; i < 8U; i++)
+	{
+		sprites[i] = NULL;
+		bullets[i] = &m72_bull_end;
+	}
 }
 
 /* Callback invoked during vsync */

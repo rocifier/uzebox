@@ -28,64 +28,77 @@
 
 #include <avr/io.h>
 
-/* User accessible sprite structures */
+/* Normal sprite structure. Chained list */
+
+typedef struct sprite_s{
+ u8  ypos;    /* Sprite Y position, negated, 32 (224): Top edge */
+ u8  height;  /* Sprite height */
+ u16 off;     /* Sprite address; bit15: Mirror flag */
+ u8  xpos;    /* Sprite X position, 16: Left edge */
+ u8  col1;    /* Color of '1' pixels */
+ u8  col2;    /* Color of '2' pixels */
+ u8  col3;    /* Color of '3' pixels */
+ struct sprite_s* next; /* Next sprite, NULL for end of list */
+}sprite_t;
+
+/* Bullet sprite structure */
 
 typedef struct{
- unsigned char off;    /* Sprite start offset within its memory bank */
- unsigned char bank;   /* Memory bank of sprite (high byte of RAM address) */
- unsigned char xpos;   /* Sprite X position, 32: Left edge */
- unsigned char ypos;   /* Sprite Y position, 32: Top edge */
- unsigned char height; /* Sprite height and X mirror on bit 7. 0: No sprite */
- unsigned char col1;   /* Color of '1' pixels */
- unsigned char col2;   /* Color of '2' pixels */
- unsigned char col3;   /* Color of '3' pixels */
-}sprite_t;
+ u8  ypos;    /* Bullet Y position, negated, 32 (224): Top edge */
+ u8  xpos;    /* Bullet X position, 16: Left edge */
+ u8  col;     /* Color */
+ u8  height;  /* Width (bit0-1: 1-4 px) and Height (bit2-7: 1 - 64 px) */
+}bullet_t;
 
 /* Provided by VideoMode72.s */
 
-extern volatile sprite_t       sprites[20];
-extern volatile unsigned char  palette[16];
-extern volatile unsigned char  bordercolor;
+extern volatile sprite_t* sprites[8];
+extern volatile bullet_t* bullets[8];
+extern volatile u8  palette[16];
+extern volatile u8  bordercolor;
 #if (M72_SCOLOR_ENA != 0)
-extern volatile unsigned char  m72_scolor[M72_MAXHEIGHT];
+extern volatile u8  m72_scolor[M72_MAXHEIGHT];
 #endif
 #if (M72_USE_LINE_ADDR != 0)
-extern volatile unsigned int   m72_rowoff[M72_LINE_ADDR_ROWS];
+extern volatile u16 m72_rowoff[M72_LINE_ADDR_ROWS];
 #else
-extern volatile unsigned int   m72_rowoff[32];
+extern volatile u16 m72_rowoff[32];
 #endif
-extern volatile unsigned char  m72_config;
+extern volatile u8  m72_config;
 #if (M72_USE_XPOS != 0)
-extern volatile unsigned char  m72_xpos;
+extern volatile u8  m72_xpos;
 #endif
-extern volatile unsigned char  m72_ypos;
-extern volatile unsigned char  m72_charrom;
+extern volatile u8  m72_ypos;
+extern volatile u8  m72_charrom;
 
-extern volatile unsigned char* m72_tt_vram;
-extern volatile unsigned char  m72_tt_trows;
-extern volatile unsigned char  m72_tt_pad;
-extern volatile unsigned char  m72_tt_hgt;
-extern volatile unsigned char  m72_tt_bcol;
-extern volatile unsigned char  m72_tt_fcol;
-extern volatile unsigned char  m72_tt_col;
-extern volatile unsigned char  m72_lt_col;
+extern volatile u8* m72_tt_vram;
+extern volatile u8  m72_tt_trows;
+extern volatile u8  m72_tt_pad;
+extern volatile u8  m72_tt_hgt;
+extern volatile u8  m72_tt_bcol;
+extern volatile u8  m72_tt_fcol;
+extern volatile u8  m72_tt_col;
+extern volatile u8  m72_lt_col;
 
-extern volatile unsigned char* m72_tb_vram;
-extern volatile unsigned char  m72_tb_trows;
-extern volatile unsigned char  m72_tb_pad;
-extern volatile unsigned char  m72_tb_hgt;
-extern volatile unsigned char  m72_tb_bcol;
-extern volatile unsigned char  m72_tb_fcol;
-extern volatile unsigned char  m72_tb_col;
-extern volatile unsigned char  m72_lb_col;
+extern volatile u8* m72_tb_vram;
+extern volatile u8  m72_tb_trows;
+extern volatile u8  m72_tb_pad;
+extern volatile u8  m72_tb_hgt;
+extern volatile u8  m72_tb_bcol;
+extern volatile u8  m72_tb_fcol;
+extern volatile u8  m72_tb_col;
+extern volatile u8  m72_lb_col;
 
-extern volatile unsigned int   m72_reset;
+extern volatile u8  m72_bull_cnt;
+extern bullet_t     m72_bull_end;
+
+extern volatile u16 m72_reset;
 
 extern void M72_Halt(void);
 extern void M72_Seq(void);
 
 /* Provided by the user tileset & character ROM */
 
-extern const unsigned char m72_defpalette[];
-extern const unsigned int  m72_deftilerows[];
-extern const unsigned char M72_DEF_CHARROM[];
+extern const u8  m72_defpalette[];
+extern const u16 m72_deftilerows[];
+extern const u8  M72_DEF_CHARROM[];
