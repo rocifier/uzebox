@@ -325,35 +325,50 @@
 ; Sprite processing code
 #define LB_SPR         254
 ; Top of video stack (init STACKL to this - 1), 4 bytes (2 call levels)
-#define LB_STACK       252
-; Adjusted sprite offsets for their start scanline
-#define LB_SPOFF       192
-; Sprite heights (with removed X mirror flags)
-#define LB_SPHGT       212
+#define LB_STACK       254
+; Globals
+#define LB_TT_VRAM     192
+#define LB_TT_TROWS    194
+#define LB_TT_PAD      195
+#define LB_TT_HGT      196
+#define LB_TT_BCOL     197
+#define LB_TT_FCOL     198
+#define LB_TT_COL      199
+#define LB_LT_COL      200
+#define LB_TB_VRAM     201
+#define LB_TB_TROWS    203
+#define LB_TB_PAD      204
+#define LB_TB_HGT      205
+#define LB_TB_BCOL     206
+#define LB_TB_FCOL     207
+#define LB_TB_COL      208
+#define LB_LB_COL      209
+#define LB_RESET       210
+#define LB_BULL_CNT    212
+#define LB_BULL_END    213
+; Bullet pointers
+#define LB_BUPT        219
 ; Saved registers
-#define LB_S_GP0       232
-#define LB_S_GP1       233
-#define LB_S_GP2       234
-#define LB_S_SPL       235
-#define LB_S_SPH       236
+#define LB_S_GP0       235
+#define LB_S_GP1       236
+#define LB_S_GP2       237
+#define LB_S_SPL       238
+#define LB_S_SPH       239
 ; Top text area calculated dimensions
-#define LB_TT_CTBL     237
-#define LB_TT_CEXT     238
-#define LB_TT_CROW     239
-#define LB_TT_CPAD     240
-#define LB_TT_CBBL     241
+#define LB_TT_CTBL     240
+#define LB_TT_CEXT     241
+#define LB_TT_CROW     242
+#define LB_TT_CPAD     243
+#define LB_TT_CBBL     244
 ; Bottom text area calculated dimensions
-#define LB_TB_CTBL     242
-#define LB_TB_CEXT     243
-#define LB_TB_CROW     244
-#define LB_TB_CPAD     245
-#define LB_TB_CBBL     246
-; Flipping for sprites
-#define LB_FLIP        247
+#define LB_TB_CTBL     245
+#define LB_TB_CEXT     246
+#define LB_TB_CROW     247
+#define LB_TB_CPAD     248
+#define LB_TB_CBBL     249
 
 ; Full variable offsets
-#define v_spoff        (M72_LBUFFER_OFF + LB_SPOFF)
-#define v_sphgt        (M72_LBUFFER_OFF + LB_SPHGT)
+#define V_BUPT         (M72_LBUFFER_OFF + LB_BUPT)
 #define V_S_GP0        (M72_LBUFFER_OFF + LB_S_GP0)
 #define V_S_GP1        (M72_LBUFFER_OFF + LB_S_GP1)
 #define V_S_GP2        (M72_LBUFFER_OFF + LB_S_GP2)
@@ -369,7 +384,6 @@
 #define V_TB_CROW      (M72_LBUFFER_OFF + LB_TB_CROW)
 #define V_TB_CPAD      (M72_LBUFFER_OFF + LB_TB_CPAD)
 #define V_TB_CBBL      (M72_LBUFFER_OFF + LB_TB_CBBL)
-#define V_FLIP         (M72_LBUFFER_OFF + LB_FLIP)
 
 
 
@@ -397,32 +411,31 @@
 	m72_ypos:      .space 1          ; Y position for game background
 	m72_charrom:   .space 1          ; Character generator ROM address high
 
-	m72_tt_vram:   .space 2
-	m72_tt_trows:  .space 1
-	m72_tt_pad:    .space 1
-	m72_tt_hgt:    .space 1
-	m72_tt_bcol:   .space 1
-	m72_tt_fcol:   .space 1
-	m72_tt_col:    .space 1
-	m72_lt_col:    .space 1
+.equ	m72_tt_vram,   (M72_LBUFFER_OFF + LB_TT_VRAM)
+.equ	m72_tt_trows,  (M72_LBUFFER_OFF + LB_TT_TROWS)
+.equ	m72_tt_pad,    (M72_LBUFFER_OFF + LB_TT_PAD)
+.equ	m72_tt_hgt,    (M72_LBUFFER_OFF + LB_TT_HGT)
+.equ	m72_tt_bcol,   (M72_LBUFFER_OFF + LB_TT_BCOL)
+.equ	m72_tt_fcol,   (M72_LBUFFER_OFF + LB_TT_FCOL)
+.equ	m72_tt_col,    (M72_LBUFFER_OFF + LB_TT_COL)
+.equ	m72_lt_col,    (M72_LBUFFER_OFF + LB_LT_COL)
 
-	m72_tb_vram:   .space 2
-	m72_tb_trows:  .space 1
-	m72_tb_pad:    .space 1
-	m72_tb_hgt:    .space 1
-	m72_tb_bcol:   .space 1
-	m72_tb_fcol:   .space 1
-	m72_tb_col:    .space 1
-	m72_lb_col:    .space 1
+.equ	m72_tb_vram,   (M72_LBUFFER_OFF + LB_TB_VRAM)
+.equ	m72_tb_trows,  (M72_LBUFFER_OFF + LB_TB_TROWS)
+.equ	m72_tb_pad,    (M72_LBUFFER_OFF + LB_TB_PAD)
+.equ	m72_tb_hgt,    (M72_LBUFFER_OFF + LB_TB_HGT)
+.equ	m72_tb_bcol,   (M72_LBUFFER_OFF + LB_TB_BCOL)
+.equ	m72_tb_fcol,   (M72_LBUFFER_OFF + LB_TB_FCOL)
+.equ	m72_tb_col,    (M72_LBUFFER_OFF + LB_TB_COL)
+.equ	m72_lb_col,    (M72_LBUFFER_OFF + LB_LB_COL)
 
-	m72_reset:     .space 2
+.equ	m72_reset,     (M72_LBUFFER_OFF + LB_RESET)
 
-	m72_bull_cnt:  .space 1
-	m72_bull_end:  .space 4
+.equ	m72_bull_cnt,  (M72_LBUFFER_OFF + LB_BULL_CNT)
+.equ	m72_bull_end,  (M72_LBUFFER_OFF + LB_BULL_END)
 
 	; Locals
 
-	v_bupt:        .space 2 * 8      ; Copied off bullet pointers
 	v_sprd:        .space 10 * 8     ; Copied off sprite data
 
 .section .text
@@ -457,24 +470,13 @@ sub_video_mode72:
 	ldi   r18,     LB_STACK - 1
 	out   STACKL,  r18     ; ( 486)
 
-	; Load mode 72 config & sprite multiplexing flip into GPIOR0
-
-	lds   r16,     m72_config
-	andi  r16,     0x0E
-	lds   r17,     V_FLIP
-	com   r17
-	andi  r17,     0x01
-	sts   V_FLIP,  r17
-	or    r16,     r17
-	out   GPR0,    r16     ; ( 497)
-
 	; Prepare main sprites for each column
 
 	ldi   ZL,      lo8(v_sprd + 8)
 	ldi   ZH,      hi8(v_sprd + 8)
 	ldi   XL,      lo8(sprites)
 	ldi   XH,      hi8(sprites)
-	ldi   r24,     8       ; ( 502)
+	ldi   r24,     8       ; ( 491)
 pre_ls:
 	ld    r25,     X+      ; ( 2)
 	st    Z+,      r25
@@ -484,37 +486,38 @@ pre_ls:
 	rcall sp_next          ; (68)
 	adiw  ZL,      8
 	dec   r24
-	brne  pre_ls           ; (73) (583; 1085)
+	brne  pre_ls           ; (73) (583; 1074)
 
 	; Copy off bullet entry list
 
-	ldi   ZL,      lo8(v_bupt)
-	ldi   ZH,      hi8(v_bupt)
+	ldi   ZL,      lo8(V_BUPT)
+	ldi   ZH,      hi8(V_BUPT)
 	ldi   XL,      lo8(bullets)
 	ldi   XH,      hi8(bullets)
-	ldi   r24,     8       ; (1090)
+	ldi   r24,     8       ; (1079)
 pre_lb:
 	ld    r25,     X+
 	st    Z+,      r25
 	ld    r25,     X+
 	st    Z+,      r25
 	dec   r24
-	brne  pre_lb           ; (11) (87; 1177)
+	brne  pre_lb           ; (11) (87; 1166)
 
-	; Load selected sprite mode's entry point
+	; Load mode 72 config & selected sprite mode's entry point
 
 	lds   ZL,      m72_config
+	out   GPR0,    ZL
 	andi  ZL,      0xF0
 	swap  ZL
 	mov   r20,     ZL
 	lsl   r20
-	add   ZL,      r20     ; (1185) ZL = Mode * 3
+	add   ZL,      r20     ; (1175) ZL = Mode * 3
 	in    XH,      STACKH
 	ldi   XL,      LB_SPR
 	clr   ZH
 	subi  ZL,      lo8(-(pm(pre_ldspm)))
 	sbci  ZH,      hi8(-(pm(pre_ldspm)))
-	ijmp                   ; (1191)
+	ijmp                   ; (1181)
 
 pre_ldspm:
 #if ((M72_SPRITE_MODES & 0x0001) != 0)
@@ -658,11 +661,11 @@ pre_ldspm:
 
 pre_ldspe:
 	st    X+,      r25
-	st    X+,      r24     ; (1199)
+	st    X+,      r24     ; (1189)
 
 	; Padding
 
-	WAIT  r24,     169     ; (1368)
+	WAIT  r24,     179     ; (1368)
 
 	; Load border color into r17
 
@@ -1700,7 +1703,7 @@ m72_sp15:
 	WAIT  r20,     212
 	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
 	WAIT  r20,     107     ; ( 461)
-	ldi   ZL,      31
+	ldi   ZL,      15
 	out   STACKL,  ZL
 	pop   r0
 	out   PIXOUT,  r0      ; ( 466) Pixel 0

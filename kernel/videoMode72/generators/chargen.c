@@ -66,7 +66,7 @@ int main(void)
  printf(";\n");
  printf("\n");
  printf("#ifndef M72_ALIGNED_SEC\n");
- printf("#define M72_ALIGNED_SEC .text\n");
+ printf("#define M72_ALIGNED_SEC .text.align512\n");
  printf("#endif\n");
  printf("\n");
  printf("\n");

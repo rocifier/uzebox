@@ -94,8 +94,8 @@ m72_sp0:
 	out   STACKL,  ZL
 	ldi   r24,     2            ; (1634) 8px wide sprites
 
-	ldi   YL,      lo8(v_bupt)
-	ldi   YH,      hi8(v_bupt)
+	ldi   YL,      lo8(V_BUPT)
+	ldi   YH,      hi8(V_BUPT)
 
 
 	; (1636) Bullet 0 (36)
@@ -229,7 +229,7 @@ sp0_0nra:
 sp0_0nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_0nra         ; (29 / 30)
-	ori   ZH,      0x80    ; (30)
+	ori   YH,      0x80    ; (30)
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
@@ -292,7 +292,7 @@ sp0_1nra:
 sp0_1nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_1nra         ; (29 / 30)
-	ori   ZH,      0x80    ; (30)
+	ori   YH,      0x80    ; (30)
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
@@ -636,7 +636,7 @@ sp0_2nra:
 sp0_2nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_2nra         ; (29 / 30)
-	ori   ZH,      0x80    ; (30)
+	ori   YH,      0x80    ; (30)
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
@@ -703,7 +703,7 @@ sp0_3nra:
 sp0_3nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_3nra         ; (29 / 30)
-	ori   ZH,      0x80    ; (30)
+	ori   YH,      0x80    ; (30)
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
@@ -773,7 +773,7 @@ sp0_4nra:
 sp0_4nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_4nra         ; (29 / 30)
-	ori   ZH,      0x80    ; (30)
+	ori   YH,      0x80    ; (30)
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
@@ -836,7 +836,7 @@ sp0_5nra:
 sp0_5nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_5nra         ; (29 / 30)
-	ori   ZH,      0x80    ; (30)
+	ori   YH,      0x80    ; (30)
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
@@ -907,7 +907,7 @@ sp0_6nra:
 sp0_6nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_6nra         ; (29 / 30)
-	ori   ZH,      0x80    ; (30)
+	ori   YH,      0x80    ; (30)
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
@@ -971,7 +971,7 @@ sp0_7nra:
 sp0_7nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_7nra         ; (29 / 30)
-	ori   ZH,      0x80    ; (30)
+	ori   YH,      0x80    ; (30)
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
