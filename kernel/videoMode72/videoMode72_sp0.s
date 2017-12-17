@@ -224,8 +224,7 @@ sp0_0nra:
 	subi  YH,      0x70    ; (31)
 	ld    r0,      Y+      ; (33)
 	ld    r1,      Y+      ; (35)
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	rjmp  sp0_0mie         ; (38)
+	rjmp  sp0_0nre         ; (37)
 sp0_0nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_0nra         ; (29 / 30)
@@ -233,6 +232,7 @@ sp0_0nor:
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
+sp0_0nre:
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 sp0_0mie:
 	mov   ZL,      r0      ; (39)
@@ -287,8 +287,7 @@ sp0_1nra:
 	subi  YH,      0x70    ; (31)
 	ld    r0,      Y+      ; (33)
 	ld    r1,      Y+      ; (35)
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	rjmp  sp0_1mie         ; (38)
+	rjmp  sp0_1nre         ; (37)
 sp0_1nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_1nra         ; (29 / 30)
@@ -296,6 +295,7 @@ sp0_1nor:
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
+sp0_1nre:
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 sp0_1mie:
 	mov   ZL,      r0      ; (39)
@@ -631,8 +631,7 @@ sp0_2nra:
 	subi  YH,      0x70    ; (31)
 	ld    r0,      Y+      ; (33)
 	ld    r1,      Y+      ; (35)
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	rjmp  sp0_2mie         ; (38)
+	rjmp  sp0_2nre         ; (38)
 sp0_2nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_2nra         ; (29 / 30)
@@ -640,6 +639,7 @@ sp0_2nor:
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
+sp0_2nre:
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 sp0_2mie:
 	mov   ZL,      r0      ; (39)
@@ -698,8 +698,7 @@ sp0_3nra:
 	subi  YH,      0x70    ; (31)
 	ld    r0,      Y+      ; (33)
 	ld    r1,      Y+      ; (35)
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	rjmp  sp0_3mie         ; (38)
+	rjmp  sp0_3nre         ; (37)
 sp0_3nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_3nra         ; (29 / 30)
@@ -707,6 +706,7 @@ sp0_3nor:
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
+sp0_3nre:
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 sp0_3mie:
 	mov   ZL,      r0      ; (39)
@@ -768,8 +768,7 @@ sp0_4nra:
 	subi  YH,      0x70    ; (31)
 	ld    r0,      Y+      ; (33)
 	ld    r1,      Y+      ; (35)
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	rjmp  sp0_4mie         ; (38)
+	rjmp  sp0_4nre         ; (37)
 sp0_4nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_4nra         ; (29 / 30)
@@ -777,6 +776,7 @@ sp0_4nor:
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
+sp0_4nre:
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 sp0_4mie:
 	mov   ZL,      r0      ; (39)
@@ -831,8 +831,7 @@ sp0_5nra:
 	subi  YH,      0x70    ; (31)
 	ld    r0,      Y+      ; (33)
 	ld    r1,      Y+      ; (35)
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	rjmp  sp0_5mie         ; (38)
+	rjmp  sp0_5nre         ; (37)
 sp0_5nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_5nra         ; (29 / 30)
@@ -840,6 +839,7 @@ sp0_5nor:
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
+sp0_5nre:
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 sp0_5mie:
 	mov   ZL,      r0      ; (39)
@@ -902,8 +902,7 @@ sp0_6nra:
 	subi  YH,      0x70    ; (31)
 	ld    r0,      Y+      ; (33)
 	ld    r1,      Y+      ; (35)
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	rjmp  sp0_6mie         ; (38)
+	rjmp  sp0_6nre         ; (37)
 sp0_6nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_6nra         ; (29 / 30)
@@ -911,6 +910,7 @@ sp0_6nor:
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
+sp0_6nre:
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 sp0_6mie:
 	mov   ZL,      r0      ; (39)
@@ -966,8 +966,7 @@ sp0_7nra:
 	subi  YH,      0x70    ; (31)
 	ld    r0,      Y+      ; (33)
 	ld    r1,      Y+      ; (35)
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	rjmp  sp0_7mie         ; (38)
+	rjmp  sp0_7nre         ; (37)
 sp0_7nor:
 	cpi   YH,      0x71    ; (28)
 	brcc  sp0_7nra         ; (29 / 30)
@@ -975,6 +974,7 @@ sp0_7nor:
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
+sp0_7nre:
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 sp0_7mie:
 	mov   ZL,      r0      ; (39)
