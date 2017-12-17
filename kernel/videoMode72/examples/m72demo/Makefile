@@ -16,10 +16,10 @@ DIRS    = $(OUTDIR) $(OBJDIR) $(DEPDIR)
 
 ## Kernel settings
 KERNEL_DIR = ../../../../kernel
-KERNEL_OPTIONS  = -DVIDEO_MODE=72 -DSOUND_MIXER=MIXER_TYPE_VSYNC
+KERNEL_OPTIONS  = -DVIDEO_MODE=72 -DSOUND_MIXER=MIXER_TYPE_VSYNC -DM72_SPRITE_MODES=0x0001
 
 ## Packrom (.uze)
-PACKROM_DIR = ../../../../tools/packrom
+PACKROM_DIR = ../../../../bin
 
 
 ## Options common to compile, link and assembly rules
@@ -48,22 +48,18 @@ LDFLAGS +=
 ## Intel Hex file production flags
 HEX_FLASH_FLAGS = -R .eeprom
 
-HEX_EEPROM_FLAGS = -j .eeprom
-HEX_EEPROM_FLAGS += --set-section-flags=.eeprom="alloc,load"
-HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
-
 
 ## Objects that must be built in order to link
 OBJECTS  = $(OBJDIR)/uzeboxVideoEngineCore.o $(OBJDIR)/uzeboxCore.o $(OBJDIR)/uzeboxSoundEngine.o $(OBJDIR)/uzeboxSoundEngineCore.o $(OBJDIR)/uzeboxVideoEngine.o
-OBJECTS += $(OBJDIR)/$(GAME).o
-OBJECTS += $(OBJDIR)/tileset.o
 OBJECTS += $(OBJDIR)/charrom.o
+OBJECTS += $(OBJDIR)/tileset.o
+OBJECTS += $(OBJDIR)/$(GAME).o
 
 ## Include Directories
 INCLUDES = -I"$(KERNEL_DIR)"
 
 ## Build
-all: $(OUTDIR)/$(TARGET) $(OUTDIR)/$(GAME).hex $(OUTDIR)/$(GAME).eep $(OUTDIR)/$(GAME).lss $(OUTDIR)/$(GAME).uze size
+all: $(OUTDIR)/$(TARGET) $(OUTDIR)/$(GAME).hex $(OUTDIR)/$(GAME).lss $(OUTDIR)/$(GAME).uze size
 
 ## Directories
 $(OBJDIR):
@@ -95,10 +91,10 @@ $(OBJDIR)/uzeboxVideoEngine.o: $(KERNEL_DIR)/uzeboxVideoEngine.c $(DIRS)
 $(OBJDIR)/$(GAME).o: main.c $(DIRS)
 	$(CC) $(INCLUDES) $(CFLAGS) -c $< -o $@
 
-$(OBJDIR)/tileset.o: tileset.s $(DIRS)
+$(OBJDIR)/charrom.o: charrom.s $(DIRS)
 	$(CC) $(INCLUDES) $(ASMFLAGS) -c $< -o $@
 
-$(OBJDIR)/charrom.o: charrom.s $(DIRS)
+$(OBJDIR)/tileset.o: tileset.s $(DIRS)
 	$(CC) $(INCLUDES) $(ASMFLAGS) -c $< -o $@
 
 ##Link
@@ -107,9 +103,6 @@ $(OUTDIR)/$(TARGET): $(OBJECTS) $(DIRS)
 
 $(OUTDIR)/%.hex: $(OUTDIR)/$(TARGET)
 	avr-objcopy -O ihex $(HEX_FLASH_FLAGS) $< $@
-
-$(OUTDIR)/%.eep: $(OUTDIR)/$(TARGET)
-	-avr-objcopy $(HEX_EEPROM_FLAGS) -O ihex $< $@ || exit 0
 
 $(OUTDIR)/%.lss: $(OUTDIR)/$(TARGET)
 	avr-objdump -h -S $< > $@

@@ -24,7 +24,7 @@
 
 
 
-static const unsigned char sprdata[] PROGMEM = {
+static const unsigned char sprdata[] __attribute__ ((section (".text.align512"))) = {
 
  0b00000011U, 0b11111111U,
  0b00001111U, 0b01010111U,
@@ -113,20 +113,28 @@ static const unsigned char txt_data[] PROGMEM = {
 
 
 
-int main(){
+void reset(void){
+	M72_Halt();
+}
 
-	unsigned char i;
-	unsigned char j;
-	unsigned char ct;
-	unsigned int  yp[18];
-	unsigned int  xp[18];
 
-	/* Fill sprites */
+
+static sprite_t main_sprites[48];
+static bullet_t main_bullets[129];
+
+
+int main(void){
+
+	u8  i;
+	u8  j;
+	u8  ct;
+	u8  yp;
+	u8  xp;
+
+	/* Fill background */
 
 	i = 0U;
 	do{
-		((unsigned char*)(0x0900U))[i] = i;
-		((unsigned char*)(0x0E00U))[i] = pgm_read_byte(&(sprdata[i]));
 		((unsigned char*)(0x0A00U))[i] = pgm_read_byte(&(bgdata[(unsigned int)(0x000U) + i]));
 		((unsigned char*)(0x0B00U))[i] = pgm_read_byte(&(bgdata[(unsigned int)(0x100U) + i]));
 		((unsigned char*)(0x0C00U))[i] = pgm_read_byte(&(bgdata[(unsigned int)(0x200U) + i]));
@@ -134,18 +142,33 @@ int main(){
 		i ++;
 	}while (i != 0U);
 
+	/* Set up sprite chains */
+
+	for (i = 0U; i < 8U; i++){
+		main_sprites[i      ].next = &main_sprites[i +  8U];
+		main_sprites[i +  8U].next = &main_sprites[i + 16U];
+		main_sprites[i + 16U].next = &main_sprites[i + 24U];
+		main_sprites[i + 24U].next = &main_sprites[i + 32U];
+		main_sprites[i + 32U].next = &main_sprites[i + 40U];
+		main_sprites[i + 40U].next = NULL;
+		sprites[i] = &main_sprites[i];
+	}
+
 	/* VRAM start offsets */
 
 	for (i = 0U; i < 32U; i++){
-
 		m72_rowoff[i] = 0xA00U + ((unsigned int)(i) * 32U);
-
 	}
 
 	/* Text mode VRAM contents */
 
+	i = 0U;
+	do{
+		((unsigned char*)(0x0E00U))[i] = i;
+		i ++;
+	}while (i != 0U);
 	for (i = 0U; i < sizeof(txt_data); i++){
-		((unsigned char*)(0x0900U))[i] = pgm_read_byte(&(txt_data[i]));
+		((unsigned char*)(0x0E00U))[i] = pgm_read_byte(&(txt_data[i]));
 	}
 
 	/* Configure mode */
@@ -154,43 +177,47 @@ int main(){
 	m72_tb_hgt = 0U;
 	m72_tt_trows = 2U;
 	m72_tb_trows = 2U;
-	m72_tt_vram = (unsigned char*)(0x900U);
-	m72_tb_vram = (unsigned char*)(0x928U);
+	m72_tt_vram = (unsigned char*)(0xE00U);
+	m72_tb_vram = (unsigned char*)(0xE28U);
 	bordercolor = 0x52U;
+
+	/* m72_reset = (unsigned int)(&reset); */
 
 	m72_config = 0x04U; /* Sprite mode 0 */
 
 	/* Set up sprites */
 
-	for (i = 0U; i < 18U; i++){
+	for (i = 0U; i < 48U; i++){
 
-		if ((i & 1U) == 0U){
-			yp[i] = ( 32U + ((i >> 1) * 1U)) << 8;
-		}else{
-			yp[i] = (104U + ((i >> 1) * 1U)) << 8;
-		}
-		xp[i] = (24U + ((i >> 1) * 13U)) << 8;
+		yp = (40U + ((i >> 1) *  7U));
+		xp = (20U + ((i & 7U) * 15U) + ((i >> 3) * 5U));
 
-		sprites[i].xpos   = 24U + (i * 5U);
-		sprites[i].ypos   = yp[i] >> 8;
-		sprites[i].off    = (i & 0x3U) * 16U;
-		sprites[i].bank   = 0xEU;
-		sprites[i].height = 8U | ((i & 4U) << 5);
-		sprites[i].col1   = 0x13U;
-		sprites[i].col2   = 0x47U;
-		sprites[i].col3   = 0x7FU;
+		main_sprites[i].xpos   = xp;
+		main_sprites[i].ypos   = 0U - yp;
+		main_sprites[i].off    = ((u16)(&(sprdata[0])) & 0x7FFFU) + ((i & 1U) * 16U);
+		main_sprites[i].off   |= (i & 1U) << 15; /* Mirror */
+		main_sprites[i].height = 24U;
+		main_sprites[i].col1   = 0x13U;
+		main_sprites[i].col2   = 0x47U;
+		main_sprites[i].col3   = 0x7FU;
 
 	}
 
-	sprites[ 4].height |= 0x10U;
-	sprites[ 5].height |= 0x10U;
-	sprites[ 8].height  = 0x20U;
-	sprites[ 9].height  = 0x18U;
-	sprites[10].height  = 0x10U;
-	sprites[12].height |= 0x10U;
-	sprites[13].height |= 0x10U;
-	sprites[16].height  = 0x20U;
-	sprites[17].height  = 0x18U;
+	/* Set up bullets */
+
+	for (i = 0U; i < 128U; i++){
+		if ((i & 0x10U) == 0U){
+			main_bullets[i].xpos = 144U + (i & 0xFU);
+		}else{
+			main_bullets[i].xpos = 160U - (i & 0xFU);
+		}
+		main_bullets[i].ypos = 0U - (64U + i);
+		main_bullets[i].height = (0U << 2) + 0U; /* Height, Width */
+		main_bullets[i].col = 0xFFU;
+	}
+	main_bullets[128].ypos = 0U;
+	main_bullets[128].height = 0U;
+	bullets[0] = &main_bullets[0];
 
 	/* Main loop */
 
@@ -230,50 +257,32 @@ int main(){
 
 		/* Sprite movements */
 
-		yp[ 0] += ct & 0x01U;
-		yp[ 1] += ct & 0x02U;
-		yp[ 2] += ct & 0x04U;
-		yp[ 3] += ct & 0x08U;
-		yp[ 4] += ct & 0x10U;
-		yp[ 5] += ct & 0x20U;
-		yp[ 6] += ct & 0x40U;
-		yp[ 7] += ct & 0x80U;
-		yp[ 8] += ct & 0x81U;
-		yp[ 9] += ct & 0x82U;
-		yp[10] += ct & 0x84U;
-		yp[11] += ct & 0x88U;
-		yp[12] += ct & 0x18U;
-		yp[13] += ct & 0x28U;
-		yp[14] += ct & 0x48U;
-		yp[15] += ct & 0x88U;
-		yp[16] += ct & 0x03U;
-		yp[17] += ct & 0x05U;
+		for (i = 0U; i < 48U; i++){
 
-		xp[ 0] += ct & 0x11U;
-		xp[ 1] += ct & 0x12U;
-		xp[ 2] += ct & 0x14U;
-		xp[ 3] += ct & 0x18U;
-		xp[ 4] += ct & 0x11U;
-		xp[ 5] += ct & 0x21U;
-		xp[ 6] += ct & 0x41U;
-		xp[ 7] += ct & 0x81U;
-		xp[ 8] += ct & 0x21U;
-		xp[ 9] += ct & 0x22U;
-		xp[10] += ct & 0x24U;
-		xp[11] += ct & 0x28U;
-		xp[12] += ct & 0x12U;
-		xp[13] += ct & 0x22U;
-		xp[14] += ct & 0x42U;
-		xp[15] += ct & 0x82U;
-		xp[16] += ct & 0x06U;
-		xp[17] += ct & 0x09U;
+			yp = (40U + ((i >> 1) *  7U));
+			xp = (20U + ((i & 7U) * 15U) + ((i >> 3) * 5U));
+			if (((ct + i) & 0x80U) != 0U){ yp ++; }
+			if (((ct + i) & 0x40U) != 0U){ xp ++; }
+			if (((ct + i + 32U) & 0x40U) != 0U){ yp ++; }
+			if (((ct + i + 16U) & 0x20U) != 0U){ xp ++; }
+			if (((ct + i + 16U) & 0x20U) != 0U){ yp ++; }
+			if (((ct + i +  8U) & 0x10U) != 0U){ xp ++; }
+			if (((ct + i +  8U) & 0x10U) != 0U){ yp ++; }
+			if (((ct + i +  4U) & 0x08U) != 0U){ xp ++; }
+
+			main_sprites[i].xpos = xp;
+			main_sprites[i].ypos = 0U - yp;
+
+		}
+
+		/* Bullet width animation */
+
+		for (i = 0U; i < 128U; i++){
+			main_bullets[i].height = ((ct + i) >> 5) & 3U;
+		}
 
 		ct ++;
 
-		for (i = 0U; i < 18U; i++){
-			sprites[i].ypos = yp[i] >> 8;
-			sprites[i].xpos = xp[i] >> 8;
-		}
 
 		WaitVsync(1);
 

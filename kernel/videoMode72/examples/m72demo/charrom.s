@@ -4,7 +4,7 @@
 ;
 
 #ifndef M72_ALIGNED_SEC
-#define M72_ALIGNED_SEC .text
+#define M72_ALIGNED_SEC .text.align512
 #endif
 
 

@@ -17,10 +17,9 @@
 #define  GPR0     _SFR_IO_ADDR(GPIOR0)
 #define  GPR1     _SFR_IO_ADDR(GPIOR1)
 #define  STACKL   0x3D
-#define  LB_SPR_B 254
-#define  LB_SPR_A 252
+#define  LB_SPR   254
 #ifndef  M72_ALIGNED_SEC
-#define  M72_ALIGNED_SEC .text
+#define  M72_ALIGNED_SEC .text.align512
 #endif
 
 
@@ -2487,11 +2486,9 @@ tilerow_exit_0:
 	in    r2,      GPR1    ; (1623) If so, load it
 	sbic  GPR0,    2       ; (1624) Color 15 (border) loading enabled?
 	in    r17,     GPR1    ; (1625) If so, load it
-	ldi   ZL,      LB_SPR_B - 1 ; (1626) 254(HI):255(LO): Sprite conf B
-	sbic  GPR0,    0       ; (1627)
-	ldi   ZL,      LB_SPR_A - 1 ; (1628) 252(HI):253(LO): Sprite conf A
-	out   STACKL,  ZL      ; (1629)
-	ret                    ; (1633)
+	ldi   ZL,      LB_SPR - 1 ; (1626) 254(HI):255(LO): Sprite conf
+	out   STACKL,  ZL      ; (1627)
+	ret                    ; (1631)
 
 tilerow_block_466:
 	out   PIXOUT,  r1
@@ -5606,11 +5603,9 @@ tilerow_exit_1:
 	in    r2,      GPR1    ; (1623) If so, load it
 	sbic  GPR0,    2       ; (1624) Color 15 (border) loading enabled?
 	in    r17,     GPR1    ; (1625) If so, load it
-	ldi   ZL,      LB_SPR_B - 1 ; (1626) 254(HI):255(LO): Sprite conf B
-	sbic  GPR0,    0       ; (1627)
-	ldi   ZL,      LB_SPR_A - 1 ; (1628) 252(HI):253(LO): Sprite conf A
-	out   STACKL,  ZL      ; (1629)
-	ret                    ; (1633)
+	ldi   ZL,      LB_SPR - 1 ; (1626) 254(HI):255(LO): Sprite conf
+	out   STACKL,  ZL      ; (1627)
+	ret                    ; (1631)
 
 tilerow_block_0:
 	out   PIXOUT,  r1
@@ -8010,11 +8005,9 @@ tilerow_exit_2:
 	in    r2,      GPR1    ; (1623) If so, load it
 	sbic  GPR0,    2       ; (1624) Color 15 (border) loading enabled?
 	in    r17,     GPR1    ; (1625) If so, load it
-	ldi   ZL,      LB_SPR_B - 1 ; (1626) 254(HI):255(LO): Sprite conf B
-	sbic  GPR0,    0       ; (1627)
-	ldi   ZL,      LB_SPR_A - 1 ; (1628) 252(HI):253(LO): Sprite conf A
-	out   STACKL,  ZL      ; (1629)
-	ret                    ; (1633)
+	ldi   ZL,      LB_SPR - 1 ; (1626) 254(HI):255(LO): Sprite conf
+	out   STACKL,  ZL      ; (1627)
+	ret                    ; (1631)
 
 tilerow_block_207:
 	out   PIXOUT,  r1
@@ -10964,11 +10957,9 @@ tilerow_exit_3:
 	in    r2,      GPR1    ; (1623) If so, load it
 	sbic  GPR0,    2       ; (1624) Color 15 (border) loading enabled?
 	in    r17,     GPR1    ; (1625) If so, load it
-	ldi   ZL,      LB_SPR_B - 1 ; (1626) 254(HI):255(LO): Sprite conf B
-	sbic  GPR0,    0       ; (1627)
-	ldi   ZL,      LB_SPR_A - 1 ; (1628) 252(HI):253(LO): Sprite conf A
-	out   STACKL,  ZL      ; (1629)
-	ret                    ; (1633)
+	ldi   ZL,      LB_SPR - 1 ; (1626) 254(HI):255(LO): Sprite conf
+	out   STACKL,  ZL      ; (1627)
+	ret                    ; (1631)
 
 tilerow_block_503:
 	out   PIXOUT,  r1

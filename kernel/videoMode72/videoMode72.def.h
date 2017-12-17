@@ -70,11 +70,13 @@
 /*
 ** Line buffer location. Low 8 bits must be zero, the full RAM bank is
 ** used. This memory area may be used outside the video frame for any purpose,
-** but the video frame will override it.
+** but the video frame will override it. The default solution places it on the
+** top, moving the stack below.
 */
 
 #ifndef M72_LBUFFER_OFF
-#define M72_LBUFFER_OFF    0x0F00
+#define UZEBOX_STACK_TOP   0x0FFF
+#define M72_LBUFFER_OFF    0x1000
 #endif
 
 /*
