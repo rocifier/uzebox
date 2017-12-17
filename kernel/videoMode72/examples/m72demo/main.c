@@ -24,6 +24,7 @@
 
 
 
+/* Sprite images (2bpp) */
 static const unsigned char sprdata[] __attribute__ ((section (".text.align512"))) = {
 
  0b00000011U, 0b11111111U,
@@ -66,6 +67,7 @@ static const unsigned char sprdata[] __attribute__ ((section (".text.align512"))
 
 
 
+/* Background */
 static const unsigned char bgdata[] PROGMEM = {
  0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
  0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
@@ -122,6 +124,9 @@ void reset(void){
 static sprite_t main_sprites[48];
 static bullet_t main_bullets[129];
 
+static u8 main_vram[1024];
+static u8 main_tram[256];
+
 
 int main(void){
 
@@ -135,10 +140,10 @@ int main(void){
 
 	i = 0U;
 	do{
-		((unsigned char*)(0x0A00U))[i] = pgm_read_byte(&(bgdata[(unsigned int)(0x000U) + i]));
-		((unsigned char*)(0x0B00U))[i] = pgm_read_byte(&(bgdata[(unsigned int)(0x100U) + i]));
-		((unsigned char*)(0x0C00U))[i] = pgm_read_byte(&(bgdata[(unsigned int)(0x200U) + i]));
-		((unsigned char*)(0x0D00U))[i] = pgm_read_byte(&(bgdata[(unsigned int)(0x300U) + i]));
+		main_vram[i +   0U] = pgm_read_byte(&(bgdata[i +   0U]));
+		main_vram[i + 256U] = pgm_read_byte(&(bgdata[i + 256U]));
+		main_vram[i + 512U] = pgm_read_byte(&(bgdata[i + 512U]));
+		main_vram[i + 768U] = pgm_read_byte(&(bgdata[i + 768U]));
 		i ++;
 	}while (i != 0U);
 
@@ -157,18 +162,18 @@ int main(void){
 	/* VRAM start offsets */
 
 	for (i = 0U; i < 32U; i++){
-		m72_rowoff[i] = 0xA00U + ((unsigned int)(i) * 32U);
+		m72_rowoff[i] = (u16)(&main_vram[(u16)(i) * 32U]);
 	}
 
 	/* Text mode VRAM contents */
 
 	i = 0U;
 	do{
-		((unsigned char*)(0x0E00U))[i] = i;
+		main_tram[i] = i;
 		i ++;
 	}while (i != 0U);
 	for (i = 0U; i < sizeof(txt_data); i++){
-		((unsigned char*)(0x0E00U))[i] = pgm_read_byte(&(txt_data[i]));
+		main_tram[i] = pgm_read_byte(&(txt_data[i]));
 	}
 
 	/* Configure mode */
@@ -177,8 +182,8 @@ int main(void){
 	m72_tb_hgt = 0U;
 	m72_tt_trows = 2U;
 	m72_tb_trows = 2U;
-	m72_tt_vram = (unsigned char*)(0xE00U);
-	m72_tb_vram = (unsigned char*)(0xE28U);
+	m72_tt_vram = &main_tram[ 0U];
+	m72_tb_vram = &main_tram[40U];
 	bordercolor = 0x52U;
 
 	/* m72_reset = (unsigned int)(&reset); */
@@ -230,12 +235,12 @@ int main(void){
 		if ((ct & 0x80U) == 0U){
 			j = (ct >> 1);
 			for (i = 0U; i < 32U; i++){
-				m72_rowoff[i] = (0xA00U + ((unsigned int)(i) * 32U)) + (j >> 3) + ((unsigned int)(j & 7U) << 12);
+				m72_rowoff[i] = (u16)(&main_vram[((u16)(i) * 32U) + (j >> 3)]) + ((u16)(j & 7U) << 12);
 			}
 		}else{
 			j = 0x80U - (ct >> 1);
 			for (i = 0U; i < 32U; i++){
-				m72_rowoff[i] = (0xA00U + ((unsigned int)(i) * 32U)) + (j >> 3) + ((unsigned int)(j & 7U) << 12);
+				m72_rowoff[i] = (u16)(&main_vram[((u16)(i) * 32U) + (j >> 3)]) + ((u16)(j & 7U) << 12);
 			}
 		}
 
