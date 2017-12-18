@@ -30,46 +30,46 @@
 ;
 ; A code block looks like as follows
 ;
-;	st    X+,      r21/r22/r23   ; or adiw XL, 1 for transparency
-;	st    X+,      r21/r22/r23   ; or adiw XL, 1 for transparency
-;	st    X+,      r21/r22/r23   ; or adiw XL, 1 for transparency
-;	st    X+,      r21/r22/r23   ; or adiw XL, 1 for transparency
+;	st    X+,      r3/r4/r5   ; or adiw XL, 1 for transparency
+;	st    X+,      r3/r4/r5   ; or adiw XL, 1 for transparency
+;	st    X+,      r3/r4/r5   ; or adiw XL, 1 for transparency
+;	st    X+,      r3/r4/r5   ; or adiw XL, 1 for transparency
 ;	ret
 ;
 .macro SP2BLK c0, c1, c2, c3
 .if     ((\c0) == 1)
-	st    X+,      r21
+	st    X+,      r3
 .elseif ((\c0) == 2)
-	st    X+,      r22
+	st    X+,      r4
 .elseif ((\c0) == 3)
-	st    X+,      r23
+	st    X+,      r5
 .else
 	adiw  XL,      1
 .endif
 .if     ((\c1) == 1)
-	st    X+,      r21
+	st    X+,      r3
 .elseif ((\c1) == 2)
-	st    X+,      r22
+	st    X+,      r4
 .elseif ((\c1) == 3)
-	st    X+,      r23
+	st    X+,      r5
 .else
 	adiw  XL,      1
 .endif
 .if     ((\c2) == 1)
-	st    X+,      r21
+	st    X+,      r3
 .elseif ((\c2) == 2)
-	st    X+,      r22
+	st    X+,      r4
 .elseif ((\c2) == 3)
-	st    X+,      r23
+	st    X+,      r5
 .else
 	adiw  XL,      1
 .endif
 .if     ((\c3) == 1)
-	st    X+,      r21
+	st    X+,      r3
 .elseif ((\c3) == 2)
-	st    X+,      r22
+	st    X+,      r4
 .elseif ((\c3) == 3)
-	st    X+,      r23
+	st    X+,      r5
 .else
 	adiw  XL,      1
 .endif

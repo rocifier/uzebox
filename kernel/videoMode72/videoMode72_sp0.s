@@ -60,13 +60,15 @@
 ; Registers:
 ;
 ;  r1: r0: Temp
-;  r2-r13: Background colors
-; r14-r16: Temp
+;  r2:     Background color
+;  r3- r5: Temp (Could be sprite colors)
+;  r6-r16: Background colors
 ; r17:     Border color
 ; r18:     Physical scanline (use to check sprite Y)
 ; r19:     Log. scanline (no usage)
 ; r20:     Temp, starts out being Zero (can be used for black border)
-; r21-r24: Temp
+; r21:     Temp, usually used by sp_next
+; r22-r24: Temp
 ; r25:     Temp, starts out being Bullet count
 ;  ZH: ZL: Work pointer (code tiling etc.)
 ;  YH: YL: Work pointer (for sprite data access)
@@ -102,47 +104,47 @@ m72_sp0:
 
 	ld    ZL,      Y
 	ldd   ZH,      Y + 1
-	ld    r22,     Z+      ; ( 6) YPos
-	add   r22,     r18     ; ( 7) Line within sprite acquired
+	ld    r4,      Z+      ; ( 6) YPos
+	add   r4,      r18     ; ( 7) Line within sprite acquired
 	ld    XL,      Z+      ; ( 9) Xpos
 	cpi   XL,      176
 	brcs  .+2
 	ldi   XL,      176     ; (12) Limit Xpos
-	ld    r21,     Z+      ; (14) Color
-	ld    r23,     Z+      ; (16) Height (bits 2-7) & Width (bits 0-1)
-	lsr   r23              ; (17)
+	ld    r3,      Z+      ; (14) Color
+	ld    r5,      Z+      ; (16) Height (bits 2-7) & Width (bits 0-1)
+	lsr   r5               ; (17)
 	brcc  sp0_b0_13        ; (18 / 19)
-	lsr   r23              ; (19)
+	lsr   r5               ; (19)
 	brcc  sp0_b0_2         ; (20 / 21)
-	cp    r23,     r22     ; (21)
+	cp    r5,      r4      ; (21)
 	brcs  sp0_b0_i0        ; (22 / 23)
-	st    X+,      r21     ; (24) 1st pixel
-	st    X+,      r21     ; (26) 2nd pixel
-	st    X+,      r21     ; (28) 3rd pixel
+	st    X+,      r3      ; (24) 1st pixel
+	st    X+,      r3      ; (26) 2nd pixel
+	st    X+,      r3      ; (28) 3rd pixel
 sp0_b0_1e:
-	st    X+,      r21     ; (30) 4th pixel
+	st    X+,      r3      ; (30) 4th pixel
 	breq  sp0_b0_x1        ; (31 / 32) At last px of sprite: Load next sprite
 	nop
 sp0_b0_ni:
 	adiw  YL,      2       ; (34)
 	rjmp  sp0_b0end        ; (36)
 sp0_b0_13:
-	lsr   r23              ; (20)
+	lsr   r5               ; (20)
 	brcc  sp0_b0_1         ; (21 / 22)
-	cp    r23,     r22     ; (22)
+	cp    r5,      r4      ; (22)
 	brcs  sp0_b0_i1        ; (23 / 24)
-	st    X+,      r21     ; (25) 1st pixel
+	st    X+,      r3      ; (25) 1st pixel
 sp0_b0_2e:
-	st    X+,      r21     ; (27) 2nd pixel
-	st    X+,      r21     ; (29) 3rd pixel
+	st    X+,      r3      ; (27) 2nd pixel
+	st    X+,      r3      ; (29) 3rd pixel
 	breq  sp0_b0_x0        ; (30 / 31) At last px of sprite: Load next sprite
 	rjmp  sp0_b0_ni        ; (32)
 sp0_b0_2:
-	cp    r23,     r22     ; (22)
+	cp    r5,      r4      ; (22)
 	brcs  sp0_b0_i1        ; (23 / 24)
 	rjmp  sp0_b0_2e        ; (25)
 sp0_b0_1:
-	cp    r23,     r22     ; (23)
+	cp    r5,      r4      ; (23)
 	brcs  sp0_b0_i2        ; (24 / 25)
 	rjmp  .                ; (26)
 	rjmp  sp0_b0_1e        ; (28)
@@ -187,12 +189,12 @@ sp0_b0end:
 	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
 	adc   YH,      r1
 	ld    XL,      Z+      ; (19) XPos
-	ld    r21,     Z+      ; (21) Color 1
-	ld    r22,     Z+      ; (23) Color 2
+	ld    r3,      Z+      ; (21) Color 1
+	ld    r4,      Z+      ; (23) Color 2
 	; --- (Display) ---
 	out   PIXOUT,  r20     ; (1698) Black border
 	; -----------------
-	ld    r23,     Z+      ; (25) Color 3
+	ld    r5,      Z+      ; (25) Color 3
 	brpl  sp0_0nor         ; (26 / 27) Mirroring flag
 	cpi   YH,      0xF1    ; (27)
 	brcc  sp0_0mra         ; (28 / 29)
@@ -257,9 +259,9 @@ sp0_0end:
 	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
 	adc   YH,      r1
 	ld    XL,      Z+      ; (19) XPos
-	ld    r21,     Z+      ; (21) Color 1
-	ld    r22,     Z+      ; (23) Color 2
-	ld    r23,     Z+      ; (25) Color 3
+	ld    r3,      Z+      ; (21) Color 1
+	ld    r4,      Z+      ; (23) Color 2
+	ld    r5,      Z+      ; (25) Color 3
 	brpl  sp0_1nor         ; (26 / 27) Mirroring flag
 	cpi   YH,      0xF1    ; (27)
 	brcc  sp0_1mra         ; (28 / 29)
@@ -322,51 +324,51 @@ sp0_bdec1:
 
 	ld    ZL,      Y
 	ldd   ZH,      Y + 1
-	ld    r22,     Z+      ; ( 6) YPos
-	add   r22,     r18     ; ( 7) Line within sprite acquired
+	ld    r4,      Z+      ; ( 6) YPos
+	add   r4,      r18     ; ( 7) Line within sprite acquired
 	ld    XL,      Z+      ; ( 9) Xpos
 	cpi   XL,      176
 	brcs  .+2
 	ldi   XL,      176     ; (12) Limit Xpos
-	ld    r21,     Z+      ; (14) Color
-	ld    r23,     Z+      ; (16) Height (bits 2-7) & Width (bits 0-1)
+	ld    r3,      Z+      ; (14) Color
+	ld    r5,      Z+      ; (16) Height (bits 2-7) & Width (bits 0-1)
 	; --- (Display) ---
 	out   PIXOUT,  r20     ; (1698) Black border
 	nop
 	; -----------------
-	lsr   r23              ; (17)
+	lsr   r5               ; (17)
 	brcc  sp0_b1_13        ; (18 / 19)
-	lsr   r23              ; (19)
+	lsr   r5               ; (19)
 	brcc  sp0_b1_2         ; (20 / 21)
-	cp    r23,     r22     ; (21)
+	cp    r5,      r4      ; (21)
 	brcs  sp0_b1_i0        ; (22 / 23)
-	st    X+,      r21     ; (24) 1st pixel
-	st    X+,      r21     ; (26) 2nd pixel
-	st    X+,      r21     ; (28) 3rd pixel
+	st    X+,      r3      ; (24) 1st pixel
+	st    X+,      r3      ; (26) 2nd pixel
+	st    X+,      r3      ; (28) 3rd pixel
 sp0_b1_1e:
-	st    X+,      r21     ; (30) 4th pixel
+	st    X+,      r3      ; (30) 4th pixel
 	breq  sp0_b1_x1        ; (31 / 32) At last px of sprite: Load next sprite
 	nop
 sp0_b1_ni:
 	adiw  YL,      2       ; (34)
 	rjmp  sp0_b1end        ; (36)
 sp0_b1_13:
-	lsr   r23              ; (20)
+	lsr   r5               ; (20)
 	brcc  sp0_b1_1         ; (21 / 22)
-	cp    r23,     r22     ; (22)
+	cp    r5,      r4      ; (22)
 	brcs  sp0_b1_i1        ; (23 / 24)
-	st    X+,      r21     ; (25) 1st pixel
+	st    X+,      r3      ; (25) 1st pixel
 sp0_b1_2e:
-	st    X+,      r21     ; (27) 2nd pixel
-	st    X+,      r21     ; (29) 3rd pixel
+	st    X+,      r3      ; (27) 2nd pixel
+	st    X+,      r3      ; (29) 3rd pixel
 	breq  sp0_b1_x0        ; (30 / 31) At last px of sprite: Load next sprite
 	rjmp  sp0_b1_ni        ; (32)
 sp0_b1_2:
-	cp    r23,     r22     ; (22)
+	cp    r5,      r4      ; (22)
 	brcs  sp0_b1_i1        ; (23 / 24)
 	rjmp  sp0_b1_2e        ; (25)
 sp0_b1_1:
-	cp    r23,     r22     ; (23)
+	cp    r5,      r4      ; (23)
 	brcs  sp0_b1_i2        ; (24 / 25)
 	rjmp  .                ; (26)
 	rjmp  sp0_b1_1e        ; (28)
@@ -390,47 +392,47 @@ sp0_b1end:
 
 	ld    ZL,      Y
 	ldd   ZH,      Y + 1
-	ld    r22,     Z+      ; ( 6) YPos
-	add   r22,     r18     ; ( 7) Line within sprite acquired
+	ld    r4,      Z+      ; ( 6) YPos
+	add   r4,      r18     ; ( 7) Line within sprite acquired
 	ld    XL,      Z+      ; ( 9) Xpos
 	cpi   XL,      176
 	brcs  .+2
 	ldi   XL,      176     ; (12) Limit Xpos
-	ld    r21,     Z+      ; (14) Color
-	ld    r23,     Z+      ; (16) Height (bits 2-7) & Width (bits 0-1)
-	lsr   r23              ; (17)
+	ld    r3,      Z+      ; (14) Color
+	ld    r5,      Z+      ; (16) Height (bits 2-7) & Width (bits 0-1)
+	lsr   r5               ; (17)
 	brcc  sp0_b2_13        ; (18 / 19)
-	lsr   r23              ; (19)
+	lsr   r5               ; (19)
 	brcc  sp0_b2_2         ; (20 / 21)
-	cp    r23,     r22     ; (21)
+	cp    r5,      r4      ; (21)
 	brcs  sp0_b2_i0        ; (22 / 23)
-	st    X+,      r21     ; (24) 1st pixel
-	st    X+,      r21     ; (26) 2nd pixel
-	st    X+,      r21     ; (28) 3rd pixel
+	st    X+,      r3      ; (24) 1st pixel
+	st    X+,      r3      ; (26) 2nd pixel
+	st    X+,      r3      ; (28) 3rd pixel
 sp0_b2_1e:
-	st    X+,      r21     ; (30) 4th pixel
+	st    X+,      r3      ; (30) 4th pixel
 	breq  sp0_b2_x1        ; (31 / 32) At last px of sprite: Load next sprite
 	nop
 sp0_b2_ni:
 	adiw  YL,      2       ; (34)
 	rjmp  sp0_b2end        ; (36)
 sp0_b2_13:
-	lsr   r23              ; (20)
+	lsr   r5               ; (20)
 	brcc  sp0_b2_1         ; (21 / 22)
-	cp    r23,     r22     ; (22)
+	cp    r5,      r4      ; (22)
 	brcs  sp0_b2_i1        ; (23 / 24)
-	st    X+,      r21     ; (25) 1st pixel
+	st    X+,      r3      ; (25) 1st pixel
 sp0_b2_2e:
-	st    X+,      r21     ; (27) 2nd pixel
-	st    X+,      r21     ; (29) 3rd pixel
+	st    X+,      r3      ; (27) 2nd pixel
+	st    X+,      r3      ; (29) 3rd pixel
 	breq  sp0_b2_x0        ; (30 / 31) At last px of sprite: Load next sprite
 	rjmp  sp0_b2_ni        ; (32)
 sp0_b2_2:
-	cp    r23,     r22     ; (22)
+	cp    r5,      r4      ; (22)
 	brcs  sp0_b2_i1        ; (23 / 24)
 	rjmp  sp0_b2_2e        ; (25)
 sp0_b2_1:
-	cp    r23,     r22     ; (23)
+	cp    r5,      r4      ; (23)
 	brcs  sp0_b2_i2        ; (24 / 25)
 	rjmp  .                ; (26)
 	rjmp  sp0_b2_1e        ; (28)
@@ -454,47 +456,47 @@ sp0_b2end:
 
 	ld    ZL,      Y
 	ldd   ZH,      Y + 1
-	ld    r22,     Z+      ; ( 6) YPos
-	add   r22,     r18     ; ( 7) Line within sprite acquired
+	ld    r4,      Z+      ; ( 6) YPos
+	add   r4,      r18     ; ( 7) Line within sprite acquired
 	ld    XL,      Z+      ; ( 9) Xpos
 	cpi   XL,      176
 	brcs  .+2
 	ldi   XL,      176     ; (12) Limit Xpos
-	ld    r21,     Z+      ; (14) Color
-	ld    r23,     Z+      ; (16) Height (bits 2-7) & Width (bits 0-1)
-	lsr   r23              ; (17)
+	ld    r3,      Z+      ; (14) Color
+	ld    r5,      Z+      ; (16) Height (bits 2-7) & Width (bits 0-1)
+	lsr   r5               ; (17)
 	brcc  sp0_b3_13        ; (18 / 19)
-	lsr   r23              ; (19)
+	lsr   r5               ; (19)
 	brcc  sp0_b3_2         ; (20 / 21)
-	cp    r23,     r22     ; (21)
+	cp    r5,      r4      ; (21)
 	brcs  sp0_b3_i0        ; (22 / 23)
-	st    X+,      r21     ; (24) 1st pixel
-	st    X+,      r21     ; (26) 2nd pixel
-	st    X+,      r21     ; (28) 3rd pixel
+	st    X+,      r3      ; (24) 1st pixel
+	st    X+,      r3      ; (26) 2nd pixel
+	st    X+,      r3      ; (28) 3rd pixel
 sp0_b3_1e:
-	st    X+,      r21     ; (30) 4th pixel
+	st    X+,      r3      ; (30) 4th pixel
 	breq  sp0_b3_x1        ; (31 / 32) At last px of sprite: Load next sprite
 	nop
 sp0_b3_ni:
 	adiw  YL,      2       ; (34)
 	rjmp  sp0_b3end        ; (36)
 sp0_b3_13:
-	lsr   r23              ; (20)
+	lsr   r5               ; (20)
 	brcc  sp0_b3_1         ; (21 / 22)
-	cp    r23,     r22     ; (22)
+	cp    r5,      r4      ; (22)
 	brcs  sp0_b3_i1        ; (23 / 24)
-	st    X+,      r21     ; (25) 1st pixel
+	st    X+,      r3      ; (25) 1st pixel
 sp0_b3_2e:
-	st    X+,      r21     ; (27) 2nd pixel
-	st    X+,      r21     ; (29) 3rd pixel
+	st    X+,      r3      ; (27) 2nd pixel
+	st    X+,      r3      ; (29) 3rd pixel
 	breq  sp0_b3_x0        ; (30 / 31) At last px of sprite: Load next sprite
 	rjmp  sp0_b3_ni        ; (32)
 sp0_b3_2:
-	cp    r23,     r22     ; (22)
+	cp    r5,      r4      ; (22)
 	brcs  sp0_b3_i1        ; (23 / 24)
 	rjmp  sp0_b3_2e        ; (25)
 sp0_b3_1:
-	cp    r23,     r22     ; (23)
+	cp    r5,      r4      ; (23)
 	brcs  sp0_b3_i2        ; (24 / 25)
 	rjmp  .                ; (26)
 	rjmp  sp0_b3_1e        ; (28)
@@ -518,25 +520,25 @@ sp0_b3end:
 
 	ld    ZL,      Y
 	ldd   ZH,      Y + 1
-	ld    r22,     Z+      ; ( 6) YPos
-	add   r22,     r18     ; ( 7) Line within sprite acquired
+	ld    r4,      Z+      ; ( 6) YPos
+	add   r4,      r18     ; ( 7) Line within sprite acquired
 	ld    XL,      Z+      ; ( 9) Xpos
 	cpi   XL,      176
 	brcs  .+2
 	ldi   XL,      176     ; (12) Limit Xpos
-	ld    r21,     Z+      ; (14) Color
-	ld    r23,     Z+      ; (16) Height (bits 2-7) & Width (bits 0-1)
-	lsr   r23              ; (17)
+	ld    r3,      Z+      ; (14) Color
+	ld    r5,      Z+      ; (16) Height (bits 2-7) & Width (bits 0-1)
+	lsr   r5               ; (17)
 	brcc  sp0_b4_13        ; (18 / 19)
-	lsr   r23              ; (19)
+	lsr   r5               ; (19)
 	brcc  sp0_b4_2         ; (20 / 21)
-	cp    r23,     r22     ; (21)
+	cp    r5,      r4      ; (21)
 	brcs  sp0_b4_i0        ; (22 / 23)
-	st    X+,      r21     ; (24) 1st pixel
-	st    X+,      r21     ; (26) 2nd pixel
-	st    X+,      r21     ; (28) 3rd pixel
+	st    X+,      r3      ; (24) 1st pixel
+	st    X+,      r3      ; (26) 2nd pixel
+	st    X+,      r3      ; (28) 3rd pixel
 sp0_b4_1e:
-	st    X+,      r21     ; (30) 4th pixel
+	st    X+,      r3      ; (30) 4th pixel
 	breq  sp0_b4_x1        ; (31 / 32) At last px of sprite: Load next sprite
 	nop
 sp0_b4_ni:
@@ -546,22 +548,22 @@ sp0_b4_ni:
 	adiw  YL,      2       ; (34)
 	rjmp  sp0_b4end        ; (36)
 sp0_b4_13:
-	lsr   r23              ; (20)
+	lsr   r5               ; (20)
 	brcc  sp0_b4_1         ; (21 / 22)
-	cp    r23,     r22     ; (22)
+	cp    r5,      r4      ; (22)
 	brcs  sp0_b4_i1        ; (23 / 24)
-	st    X+,      r21     ; (25) 1st pixel
+	st    X+,      r3      ; (25) 1st pixel
 sp0_b4_2e:
-	st    X+,      r21     ; (27) 2nd pixel
-	st    X+,      r21     ; (29) 3rd pixel
+	st    X+,      r3      ; (27) 2nd pixel
+	st    X+,      r3      ; (29) 3rd pixel
 	breq  sp0_b4_x0        ; (30 / 31) At last px of sprite: Load next sprite
 	rjmp  sp0_b4_ni        ; (32)
 sp0_b4_2:
-	cp    r23,     r22     ; (22)
+	cp    r5,      r4      ; (22)
 	brcs  sp0_b4_i1        ; (23 / 24)
 	rjmp  sp0_b4_2e        ; (25)
 sp0_b4_1:
-	cp    r23,     r22     ; (23)
+	cp    r5,      r4      ; (23)
 	brcs  sp0_b4_i2        ; (24 / 25)
 	rjmp  .                ; (26)
 	rjmp  sp0_b4_1e        ; (28)
@@ -601,9 +603,9 @@ sp0_1endx:
 	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
 	adc   YH,      r1
 	ld    XL,      Z+      ; (19) XPos
-	ld    r21,     Z+      ; (21) Color 1
-	ld    r22,     Z+      ; (23) Color 2
-	ld    r23,     Z+      ; (25) Color 3
+	ld    r3,      Z+      ; (21) Color 1
+	ld    r4,      Z+      ; (23) Color 2
+	ld    r5,      Z+      ; (25) Color 3
 	brpl  sp0_2nor         ; (26 / 27) Mirroring flag
 	cpi   YH,      0xF1    ; (27)
 	brcc  sp0_2mra         ; (28 / 29)
@@ -664,9 +666,9 @@ sp0_2end:
 	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
 	adc   YH,      r1
 	ld    XL,      Z+      ; (19) XPos
-	ld    r21,     Z+      ; (21) Color 1
-	ld    r22,     Z+      ; (23) Color 2
-	ld    r23,     Z+      ; (25) Color 3
+	ld    r3,      Z+      ; (21) Color 1
+	ld    r4,      Z+      ; (23) Color 2
+	ld    r5,      Z+      ; (25) Color 3
 	brpl  sp0_3nor         ; (26 / 27) Mirroring flag
 	cpi   YH,      0xF1    ; (27)
 	brcc  sp0_3mra         ; (28 / 29)
@@ -738,9 +740,9 @@ sp0_3end:
 	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
 	adc   YH,      r1
 	ld    XL,      Z+      ; (19) XPos
-	ld    r21,     Z+      ; (21) Color 1
-	ld    r22,     Z+      ; (23) Color 2
-	ld    r23,     Z+      ; (25) Color 3
+	ld    r3,      Z+      ; (21) Color 1
+	ld    r4,      Z+      ; (23) Color 2
+	ld    r5,      Z+      ; (25) Color 3
 	brpl  sp0_4nor         ; (26 / 27) Mirroring flag
 	cpi   YH,      0xF1    ; (27)
 	brcc  sp0_4mra         ; (28 / 29)
@@ -801,9 +803,9 @@ sp0_4end:
 	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
 	adc   YH,      r1
 	ld    XL,      Z+      ; (19) XPos
-	ld    r21,     Z+      ; (21) Color 1
-	ld    r22,     Z+      ; (23) Color 2
-	ld    r23,     Z+      ; (25) Color 3
+	ld    r3,      Z+      ; (21) Color 1
+	ld    r4,      Z+      ; (23) Color 2
+	ld    r5,      Z+      ; (25) Color 3
 	brpl  sp0_5nor         ; (26 / 27) Mirroring flag
 	cpi   YH,      0xF1    ; (27)
 	brcc  sp0_5mra         ; (28 / 29)
@@ -852,8 +854,8 @@ sp0_5end:
 	; ( 311) Sprite 6 (74 + 3 + 1)
 
 	; --- (Preload) ---
-	lds   r15,     (v_sprd + (10 * 7) + 0) ; YPos
-	add   r15,     r18     ; Line within sprite acquired
+	lds   r20,     (v_sprd + (10 * 7) + 0) ; YPos
+	add   r20,     r18     ; Line within sprite acquired
 	; -----------------
 	ldi   ZL,      lo8(v_sprd + (10 * 6))
 	ldi   ZH,      hi8(v_sprd + (10 * 6))
@@ -868,9 +870,9 @@ sp0_5end:
 	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
 	adc   YH,      r1
 	ld    XL,      Z+      ; (19) XPos
-	ld    r21,     Z+      ; (21) Color 1
-	ld    r22,     Z+      ; (23) Color 2
-	ld    r23,     Z+      ; (25) Color 3
+	ld    r3,      Z+      ; (21) Color 1
+	ld    r4,      Z+      ; (23) Color 2
+	ld    r5,      Z+      ; (25) Color 3
 	brpl  sp0_6nor         ; (26 / 27) Mirroring flag
 	cpi   YH,      0xF1    ; (27)
 	brcc  sp0_6mra         ; (28 / 29)
@@ -928,17 +930,17 @@ sp0_6end:
 	ldi   ZL,      lo8(v_sprd + (10 * 7) + 1)
 	ldi   ZH,      hi8(v_sprd + (10 * 7) + 1)
 	ld    XL,      Z+      ; ( 7) Height
-	cp    r15,     XL
+	cp    r20,     XL
 	brcc  sp0_7ina         ; ( 9 / 10)
-	mul   r15,     r24     ; (11) r24 = 2; 8px wide sprites
+	mul   r20,     r24     ; (11) r24 = 2; 8px wide sprites
 	ld    YL,      Z+      ; (13) OffLo
 	add   YL,      r0
 	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
 	adc   YH,      r1
 	ld    XL,      Z+      ; (19) XPos
-	ld    r21,     Z+      ; (21) Color 1
-	ld    r22,     Z+      ; (23) Color 2
-	ld    r23,     Z+      ; (25) Color 3
+	ld    r3,      Z+      ; (21) Color 1
+	ld    r4,      Z+      ; (23) Color 2
+	ld    r5,      Z+      ; (25) Color 3
 	brpl  sp0_7nor         ; (26 / 27) Mirroring flag
 	cpi   YH,      0xF1    ; (27)
 	brcc  sp0_7mra         ; (28 / 29)
