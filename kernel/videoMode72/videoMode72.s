@@ -1831,6 +1831,74 @@ M72_Seq:
 .section .text
 
 
+
+;
+; Bullet code. 42 cycles (35 + 3 for rcall). This can be used to reduce sprite
+; mode sizes where there are cycles to afford the 6 cycle overhead (an
+; unrolled bullet is 36 cycles).
+;
+sp_bullet:
+	ld    ZL,      Y
+	ldd   ZH,      Y + 1
+	ld    r4,      Z+      ; ( 6) YPos
+	add   r4,      r18     ; ( 7) Line within sprite acquired
+	ld    XL,      Z+      ; ( 9) Xpos
+	cpi   XL,      176
+	brcs  .+2
+	ldi   XL,      176     ; (12) Limit Xpos
+	ld    r3,      Z+      ; (14) Color
+	ld    r5,      Z+      ; (16) Height (bits 2-7) & Width (bits 0-1)
+	lsr   r5               ; (17)
+	brcc  sp_b_13          ; (18 / 19)
+	lsr   r5               ; (19)
+	brcc  sp_b_2           ; (20 / 21)
+	cp    r5,      r4      ; (21)
+	brcs  sp_b_i0          ; (22 / 23)
+	st    X+,      r3      ; (24) 1st pixel
+	st    X+,      r3      ; (26) 2nd pixel
+	st    X+,      r3      ; (28) 3rd pixel
+sp_b_1e:
+	st    X+,      r3      ; (30) 4th pixel
+	brne  sp_b_ni          ; (31 / 32) At last px of sprite: Load next sprite
+sp_b_x0:
+	st    Y+,      ZL
+	st    Y+,      ZH      ; (35)
+	ret                    ; (39)
+sp_b_ni:
+	nop
+	adiw  YL,      2       ; (35)
+	ret                    ; (39)
+sp_b_13:
+	lsr   r5               ; (20)
+	brcc  sp_b_1           ; (21 / 22)
+	cp    r5,      r4      ; (22)
+	brcs  sp_b_i1          ; (23 / 24)
+	st    X+,      r3      ; (25) 1st pixel
+sp_b_2e:
+	st    X+,      r3      ; (27) 2nd pixel
+	st    X+,      r3      ; (29) 3rd pixel
+	breq  sp_b_x0          ; (30 / 31) At last px of sprite: Load next sprite
+	rjmp  sp_b_ni          ; (32)
+sp_b_2:
+	cp    r5,      r4      ; (22)
+	brcs  sp_b_i1          ; (23 / 24)
+	rjmp  sp_b_2e          ; (25)
+sp_b_1:
+	cp    r5,      r4      ; (23)
+	brcs  sp_b_i2          ; (24 / 25)
+	rjmp  .                ; (26)
+	rjmp  sp_b_1e          ; (28)
+sp_b_i0:
+	nop                    ; (24)
+sp_b_i1:
+	nop                    ; (25)
+sp_b_i2:
+	lpm   XL,      Z       ; (28)
+	rjmp  .
+	rjmp  sp_b_ni          ; (32)
+
+
+
 ;
 ; Load next sprite code for sprite modes. Assumes entry with rcall.
 ;

@@ -88,7 +88,7 @@
 
 
 ;
-; Entry point A
+; Entry point
 ;
 m72_sp0:
 
@@ -158,7 +158,7 @@ sp0_b0_i2:
 	rjmp  sp0_b0_ni        ; (32)
 
 sp0_bdec0:
-	rjmp  sp0_bdec1        ; Bullet decision jump
+	rjmp  sp0_bdec1        ; (1677) Bullet decision jump
 
 sp0_b0_x0:
 	nop
@@ -317,7 +317,8 @@ sp0_bdec1:
 
 	; (1677) Sprite / Bullet decision
 
-	lpm   ZL,      Z
+	rjmp  .
+	rjmp  .
 
 
 	; (1681) Bullet 1 (36 + 2)
