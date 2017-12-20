@@ -94,7 +94,7 @@ m72_sp3:
 
 	ldi   ZL,      LB_STACK - 1 ; Back to video stack (at the end of the line buffer)
 	out   STACKL,  ZL
-	ldi   r24,     4            ; (1634) 16px wide sprites
+	ldi   r24,     8            ; (1634) 32px wide sprites
 
 	ldi   YL,      lo8(V_BUPT)
 	ldi   YH,      hi8(V_BUPT)
@@ -191,7 +191,7 @@ sp3_b1end:
 	ld    XL,      Z+      ; ( 7) Height
 	cp    r0,      XL
 	brcc  sp3_4ina         ; ( 9 / 10)
-	mul   r0,      r24     ; (11) r24 = 4; 16px wide sprites
+	mul   r0,      r24     ; (11) r24 = 8; 32px wide sprites
 	ld    YL,      Z+      ; (13) OffLo
 	add   YL,      r0
 	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
@@ -281,7 +281,7 @@ sp3_4end:
 	ld    XL,      Z+      ; ( 7) Height
 	cp    r0,      XL
 	brcc  sp3_2ina         ; ( 9 / 10)
-	mul   r0,      r24     ; (11) r24 = 4; 16px wide sprites
+	mul   r0,      r24     ; (11) r24 = 8; 32px wide sprites
 	ld    YL,      Z+      ; (13) OffLo
 	add   YL,      r0
 	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
@@ -361,7 +361,7 @@ sp3_2end:
 	add   r20,     r18     ; Line within sprite acquired
 	cp    r20,     r25
 	brcc  sp3_0ina         ; ( 9 / 10)
-	mul   r20,     r24     ; (11) r24 = 4; 16px wide sprites
+	mul   r20,     r24     ; (11) r24 = 8; 32px wide sprites
 	movw  YL,      r22
 	add   YL,      r0
 	adc   YH,      r1
