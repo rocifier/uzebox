@@ -1002,7 +1002,7 @@ sp0_0end:
 
 
 ;
-; Routine sp_next for sprite 6
+; Routine sp_next for sprite 1
 ;
 sp0_1next:
 
@@ -1051,7 +1051,7 @@ sp0_1next_lie:
 	ret                    ; (58)
 
 ;
-; Routine sp_next for sprite 3
+; Routine sp_next for sprite 4
 ;
 sp0_4next:
 
@@ -1100,7 +1100,7 @@ sp0_4next_lie:
 	ret                    ; (58)
 
 ;
-; Routine sp_next for sprite 0
+; Routine sp_next for sprite 7
 ;
 sp0_7next:
 

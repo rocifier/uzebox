@@ -1,5 +1,5 @@
 /*
- *  Uzebox Kernel - Mode 72, Sprite mode 0
+ *  Uzebox Kernel - Mode 72, Sprite mode 1
  *  Copyright (C) 2017 Sandor Zsuga (Jubatian)
  *
  *  This program is free software: you can redistribute it and/or modify
