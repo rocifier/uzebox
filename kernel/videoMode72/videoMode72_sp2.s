@@ -20,9 +20,9 @@
 
 ;=============================================================================
 ;
-; Video mode 72, Sprite mode 1
+; Video mode 72, Sprite mode 2
 ;
-; 16 pixels wide ROM (0x8000 - 0xEFFF) / RAM sprites
+; 12 pixels wide ROM (0x8000 - 0xEFFF) / RAM sprites
 ;
 ; Sprites are available in the following manner:
 ;
