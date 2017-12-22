@@ -302,17 +302,17 @@ sp4_0beg:
 	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
 	; -----------------
 	icall                  ; (59)
-	mov   ZL,      r1      ; (61) (-1)
+	mov   ZL,      r0      ; (61) (-1)
 	icall                  ; (78)
 
 	; ( 389) (78 - 5)
 
 	mov   XL,      r25     ; ( 2) (-1) XPos of Sprite 7
-	mov   ZL,      r21     ; ( 4) (-1)
+	mov   ZL,      r1      ; ( 4) (-1)
 	icall                  ; (21)
-	mov   ZL,      r22     ; (23) (-1)
+	mov   ZL,      r21     ; (23) (-1)
 	icall                  ; (40)
-	mov   ZL,      r23     ; (42) (-1)
+	mov   ZL,      r22     ; (42) (-1)
 	icall                  ; (59)
 	mov   ZL,      r23     ; (61) (-1)
 	icall                  ; (78)
