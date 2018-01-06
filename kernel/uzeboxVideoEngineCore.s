@@ -439,7 +439,9 @@ no_render:
 	call VideoModeVsync	
 
 	;process music (music, envelopes, etc)
-	call process_music
+	#if (MIX_WAITVSYNC == 0)
+		call process_music
+	#endif
 	clr r1
 
 	;process user post callback

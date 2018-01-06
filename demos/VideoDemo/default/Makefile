@@ -11,7 +11,7 @@ INFO=../gameinfo.properties
 
 ## Kernel settings
 KERNEL_DIR = ../../../kernel
-KERNEL_OPTIONS = -DUZEBOX -DVIDEO_MODE=7 -DINTRO_LOGO=0
+KERNEL_OPTIONS = -DUZEBOX -DVIDEO_MODE=7 -DINTRO_LOGO=0 -DMIX_BANKED=1
 
 
 ## Options common to compile, link and assembly rules

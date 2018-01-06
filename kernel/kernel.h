@@ -147,7 +147,11 @@
 
 	extern unsigned char mix_buf[];
 	extern volatile unsigned char *mix_pos;
+	extern volatile unsigned char *mix_wpos;
 	extern volatile unsigned char mix_bank;
+#if ((USER_AUDIO == 0) && (ENABLE_MIXER != 0))
+	extern volatile unsigned int  mix_scnt;
+#endif
 	extern unsigned char tr4_barrel_lo;
 	extern unsigned char tr4_barrel_hi;
 	extern unsigned char tr4_params;

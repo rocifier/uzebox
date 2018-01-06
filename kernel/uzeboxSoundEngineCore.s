@@ -71,6 +71,10 @@
 	#include "soundMixerVsync.s"
 #endif	
 
+
+#if (USER_AUDIO == 0)
+
+
 .section .text
 
 ;**********************
@@ -282,8 +286,8 @@ waves:
 .section .text
 
 
+#endif
 
 
 
-
-
+

@@ -170,7 +170,6 @@ const u16 io_table[] PROGMEM ={
 
 
 void Initialize(void){
-	int i;
 
 	cli();
 
@@ -188,22 +187,29 @@ void Initialize(void){
 	//InitSoundPort(); //ramp-up sound to avoid click
 
 	#if SOUND_MIXER == MIXER_TYPE_VSYNC
-	
-		//Initialize the mixer buffer
-		//ramp up to avoid initial click
-		for(int j=0;j<MIX_BANK_SIZE*2;j++){
-			mix_buf[j]=0x80;//(i<128?i:128);
+
+		for (int j = 0U; j < MIX_BUF_SIZE; j++){
+			mix_buf[j] = 0x80U; /* Initialize the mixer buffer to silence */
 		}
 
-		mix_pos=mix_buf;
-		mix_bank=0;
+		mix_pos = mix_buf;
+		mix_wpos = mix_buf;
+		#if (MIX_BUF_SIZE == (2 * MIX_BANK_SIZE))
+			mix_bank = 0U;
+		#endif
+		#if ((USER_AUDIO == 0) && (ENABLE_MIXER != 0))
+			mix_scnt = 128U; /* Evenly spaces process_music calls */
+		#endif
+
 	#endif
 
-	#if MIXER_CHAN4_TYPE == 0
-		//initialize LFSR		
-		tr4_barrel_lo=1;
-		tr4_barrel_hi=1;		
-		tr4_params=0b00000001; //15 bits no divider (1)
+	#if (USER_AUDIO == 0)
+		#if MIXER_CHAN4_TYPE == 0
+			//initialize LFSR		
+			tr4_barrel_lo=1;
+			tr4_barrel_hi=1;		
+			tr4_params=0b00000001; //15 bits no divider (1)
+		#endif
 	#endif
 
 	#if UART == 1
@@ -215,10 +221,12 @@ void Initialize(void){
 		snesMouseEnabled=false;
 	#endif
 
-	//silence all sound channels
-	for(i=0;i<CHANNELS;i++){
-		mixer.channels.all[i].volume=0;
-	}
+	#if (USER_AUDIO == 0)
+		//silence all sound channels
+		for(int i=0;i<CHANNELS;i++){
+			mixer.channels.all[i].volume=0;
+		}
+	#endif
 
 	//set sync parameters. starts at odd field, in pre-eq pulses, line 1, vsync flag cleared
 	sync_phase=0;

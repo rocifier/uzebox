@@ -250,8 +250,15 @@ void WaitVsync(int count){
 	int i;
 	//ClearVsyncFlag();
 	for(i=0;i<count;i++){
-		while(!GetVsyncFlag());
-		ClearVsyncFlag();		
+		while (!GetVsyncFlag()){
+#if (MIX_WAITVSYNC != 0)
+			process_music();
+#endif
+		}
+		ClearVsyncFlag();
+#if (MIX_WAITVSYNC != 0)
+		process_music();
+#endif
 	}
 }
 

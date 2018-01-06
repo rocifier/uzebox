@@ -475,8 +475,8 @@
 		#define CHANNELS WAVE_CHANNELS+NOISE_CHANNELS+PCM_CHANNELS
 		#define CHANNEL_STRUCT_SIZE 6
 
-		#define AUDIO_OUT_HSYNC_CYCLES 135
-		#define AUDIO_OUT_VSYNC_CYCLES 68
+		#define AUDIO_OUT_HSYNC_CYCLES 133
+		#define AUDIO_OUT_VSYNC_CYCLES 67
 
 	#endif
 
@@ -512,7 +512,31 @@
 	#define VIDEO_PORT _SFR_IO_ADDR(DATA_PORT)
 
 	#define MIX_BANK_SIZE (SYNC_HSYNC_PULSES + ((SYNC_PRE_EQ_PULSES+SYNC_EQ_PULSES+SYNC_POST_EQ_PULSES)/2))
-	#define MIX_BUF_SIZE MIX_BANK_SIZE*2
+	#ifndef MIX_BANKED
+		#define MIX_BANKED 0
+	#endif
+	#ifndef MIX_WAITVSYNC
+		#define MIX_WAITVSYNC 0
+	#endif
+	#ifndef MIX_BUF_SIZE
+		#if   (MIX_BANKED != 0)
+			#define MIX_BUF_SIZE (MIX_BANK_SIZE * 2)
+		#elif (MIX_WAITVSYNC != 0)
+			#define MIX_BUF_SIZE 240
+		#else
+			#define MIX_BUF_SIZE 272
+		#endif
+	#endif
+	#ifndef MIX_SEGMENT_SIZE
+		#if (MIX_BANKED != 0)
+			#define MIX_SEGMENT_SIZE 4
+		#else
+			#define MIX_SEGMENT_SIZE 8
+		#endif
+	#endif
+	#ifndef USER_AUDIO
+		#define USER_AUDIO 0
+	#endif
 	//#define MIDI_RX_BUF_SIZE 128
 
 	#define JOYPAD_OUT_PORT PORTA

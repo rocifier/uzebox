@@ -24,6 +24,10 @@
 #include <avr/pgmspace.h>
 #include "uzebox.h"
 
+
+#if (USER_AUDIO == 0)
+
+
 #define CONTROLER_VOL 7
 #define CONTROLER_EXPRESSION 11
 #define CONTROLER_TREMOLO 92
@@ -1060,3 +1064,5 @@ u8 GetMasterVolume(){
 bool IsSongPlaying(){
 	return playSong;
 }
+
+#endif
