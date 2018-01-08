@@ -251,13 +251,13 @@ void WaitVsync(int count){
 	//ClearVsyncFlag();
 	for(i=0;i<count;i++){
 		while (!GetVsyncFlag()){
-#if (MIX_WAITVSYNC != 0)
-			process_music();
+#if ((MIX_WAITVSYNC != 0) && (SOUND_MIXER == MIXER_TYPE_VSYNC))
+			ProcessAudio();
 #endif
 		}
 		ClearVsyncFlag();
 #if (MIX_WAITVSYNC != 0)
-		process_music();
+		ProcessAudio();
 #endif
 	}
 }

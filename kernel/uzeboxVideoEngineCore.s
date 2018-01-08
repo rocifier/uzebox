@@ -200,8 +200,9 @@ TIMER1_COMPA_vect:
 	bst ZL,0
 	cbi _SFR_IO_ADDR(SYNC_PORT),SYNC_PIN	;TCNT1=0x68
 	brtc sync_pre_eq_no_sound_update
-	ldi ZL,1	;indicate update_sound to generate the SBI for pre-eq
-	call update_sound
+	ldi ZL,1	;indicate UpdateSound to generate the SBI for pre-eq
+	nop
+	call UpdateSound
 	rjmp sync_end
 
 sync_pre_eq_no_sound_update:
@@ -231,7 +232,7 @@ sync_eq:
 	ldi ZL,4
 	brtc sync_eq_skip
 	
-	call update_sound
+	call UpdateSound
 
 sync_eq_skip:
 	;enable interupt to bring back sync 
@@ -291,7 +292,8 @@ sync_post_eq:
 	cbi _SFR_IO_ADDR(SYNC_PORT),SYNC_PIN ;2
 	brtc sync_post_eq_no_sound_update
 	ldi ZL,1	
-	call update_sound
+	nop
+	call UpdateSound
 	rjmp sync_pre_eq_cont
 
 sync_post_eq_no_sound_update:
@@ -333,9 +335,9 @@ sync_hsync:
 
 	cbi _SFR_IO_ADDR(SYNC_PORT),SYNC_PIN ;2
 	
-	ldi ZL,2	;indicate update_sound to generate the SBI for pre-eq
+	ldi ZL,2	;indicate UpdateSound to generate the SBI for pre-eq
 	rjmp .
-	call update_sound
+	call UpdateSound
 
 	;check if we have reached the first line to render
 	ldi ZH,SYNC_HSYNC_PULSES
@@ -440,7 +442,7 @@ no_render:
 
 	;process music (music, envelopes, etc)
 	#if (MIX_WAITVSYNC == 0)
-		call process_music
+		call ProcessAudio
 	#endif
 	clr r1
 
@@ -493,7 +495,7 @@ hsync_pulse:
 	cbi _SFR_IO_ADDR(SYNC_PORT),SYNC_PIN ;2
 	ldi ZL,2
 	rjmp .
-	call update_sound
+	call UpdateSound
 
 	lds ZL,sync_pulse
 	dec ZL

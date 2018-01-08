@@ -28,12 +28,6 @@
 #include <avr/io.h>
 #include <defines.h>
 
-.global InitSound
-.global update_sound_buffer
-.global update_sound_buffer_2
-.global update_sound_buffer_fast
-.global process_music
-.global waves
 .global mix_pos
 .global mix_buf
 .global mix_bank
@@ -41,8 +35,10 @@
 .global tr4_barrel_hi
 .global tr4_params
 .global sound_enabled
-.global update_sound
-.global counter
+#if (USER_AUDIO == 0)
+.global ProcessAudio
+.global UpdateSound
+#endif
 
 ; Public variables
 .global mixer
@@ -62,7 +58,11 @@
 
 .section .bss
 
-	sound_enabled:.space 1
+sound_enabled:    .space 1
+
+
+
+#if (USER_AUDIO == 0)
 
 	; struct MixerStruct -> soundEngine.h
 
@@ -110,27 +110,31 @@ mixerStruct:
 	tr5_loop_end_hi: .space 1
 #endif
 
+#endif
+
+
 .section .text
 
 
 
-;**********************
-; Mix sound and process music track
-; NOTE: registers r18-r27 are already saved by the caller
-;***********************
-process_music:
+#if (USER_AUDIO == 0)
 
-#if ENABLE_MIXER==1
-	lds ZL,sound_enabled
-	sbrc ZL,0
-	call ProcessMusic
+;***********************
+; Mix sound and process music track
+;***********************
+ProcessAudio:
+
+#if (ENABLE_MIXER != 0)
+	lds   ZL,      sound_enabled
+	sbrc  ZL,      0
+	call  ProcessMusic
 #endif
 
 	ret
 
 
 
-;****************************
+;***********************
 ; Inline sound mixing
 ; In: ZL = video phase (1 = Pre-eq / Post-eq, 2 = Hsync, 0 = No sync)
 ;
@@ -138,9 +142,9 @@ process_music:
 ; it can finish earlier or later. Sync pulse timings have to be maintained.
 ;
 ; Destroys: Z, r0, r1
-;****************************
+;***********************
 
-update_sound:
+UpdateSound:
 
 	push  r18
 	push  r17
@@ -166,7 +170,7 @@ update_sound:
 	mulsu r16,     r17     ; (sample * mixing_vol)
 	sbc   r0,      r0      ; Sign extend
 
-	; Channel 2 (27 cy + 2/3 sync generator + 2 preload)
+	; Channel 2 (27 cy + 2/3 sync generator)
 
 	lds   r17,     tr2_pos_frac
 	lds   ZL,      tr2_pos_lo
@@ -183,15 +187,15 @@ update_sound:
 	mulsu r16,     r17     ; (sample * mixing_vol)
 	sbc   r0,      r0      ; Sign extend
 	add   r1,      ZH      ; Add ((sample * vol) >> 8) to mix buffer lsb
-	lds   r17,     tr3_pos_frac
+	adc   r0,      ZL      ; Ajust mix buffer msb
 	;--- Video sync update ( 68 cy LOW pulse) ---
 	sbrc  r18,     0
 	sbi   _SFR_IO_ADDR(SYNC_PORT), SYNC_PIN
 	;--------------------------------------------
-	adc   r0,      ZL      ; Ajust mix buffer msb
 
-	; Channel 3 (27 cy - 2 preload)
+	; Channel 3 (27 cy)
 
+	lds   r17,     tr3_pos_frac
 	lds   ZL,      tr3_pos_lo
 	lds   ZH,      tr3_pos_hi
 	lds   r16,     tr3_step_lo
@@ -385,3 +389,5 @@ uart_tx_end:
 	pop   r18
 
 	ret
+
+#endif

@@ -27,21 +27,17 @@
 #include <avr/io.h>
 #include <defines.h>
 
-.global update_sound_buffer
-.global process_music
-.global waves
 .global mix_pos
 .global mix_wpos
 .global mix_buf
 .global mix_bank
-#if ((USER_AUDIO == 0) && (ENABLE_MIXER != 0))
 .global mix_scnt
-#endif
 .global tr4_barrel_lo
 .global tr4_barrel_hi
 .global tr4_params
 .global sound_enabled
-.global update_sound
+.global ProcessAudio
+.global UpdateSound
 
 ; Public variables
 .global mixer
@@ -147,7 +143,7 @@ mix_scnt:         .space 2     ; Sample counter for the mixer
 ; Inputs:
 ; r25:r24: Target 8 byte audio buffer segment.
 ;***********************
-Process_Audio_Segment:
+ProcessAudioSegment:
 
 	movw  XL,      r24     ; Target buffer
 
@@ -353,11 +349,11 @@ pas_nomusic:
 ;***********************
 ; Mix sound and process music track
 ;***********************
-process_music:
+ProcessAudio:
 
 #if (MIX_BUF_SIZE == (2 * MIX_BANK_SIZE))
 	; Compatibility: Keep using and flipping mix_bank. This only works if
-	; process_music is called from the VSync interrupt, but it is
+	; ProcessAudio is called from the VSync interrupt, but it is
 	; sufficient to run stuff using it.
 
 	lds   ZL,      mix_bank
@@ -392,7 +388,7 @@ pmu_posrdl:
 	subi  ZL,      lo8(-(MIX_BUF_SIZE))
 	sbci  ZH,      hi8(-(MIX_BUF_SIZE))
 
-	; Save regs for Process_Audio_Segment
+	; Save regs for ProcessAudioSegment
 
 	push  r2
 	push  r3
@@ -422,7 +418,7 @@ pmu_aloop:
 	push  ZH
 	push  r24
 	push  r25
-	call  Process_Audio_Segment
+	call  ProcessAudioSegment
 	pop   r25
 	pop   r24
 	pop   ZH
@@ -439,7 +435,7 @@ pmu_aloope:
 	sts   mix_wpos + 0, r24
 	sts   mix_wpos + 1, r25
 
-	; Restore regs after Process_Audio_Segment
+	; Restore regs after ProcessAudioSegment
 
 	pop   YH
 	pop   YL
@@ -476,7 +472,7 @@ pmu_aloope:
 ; Destroys: Z, r0, r1
 ;***********************
 
-update_sound:
+UpdateSound:
 
 	push  r16
 	push  r17
@@ -507,9 +503,10 @@ update_sound:
 	; Wait 24 cycles (there was an UART access code here which could not
 	; be activated any more)
 
-	ldi   ZL,      8
+	ldi   ZL,      7
 	dec   ZL
 	brne  .-4
+	rjmp  .
 
 	pop   ZL
 	pop   r18
@@ -527,6 +524,7 @@ update_sound:
 	ldi   ZH,      21
 	dec   ZH
 	brne  .-4
+	nop
 
 	;--- Video sync update (136 cy LOW pulse) ---
 	sbrc  ZL,      1

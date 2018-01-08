@@ -198,7 +198,7 @@ void Initialize(void){
 			mix_bank = 0U;
 		#endif
 		#if ((USER_AUDIO == 0) && (ENABLE_MIXER != 0))
-			mix_scnt = 128U; /* Evenly spaces process_music calls */
+			mix_scnt = 128U; /* Evenly spaces ProcessAudio calls */
 		#endif
 
 	#endif

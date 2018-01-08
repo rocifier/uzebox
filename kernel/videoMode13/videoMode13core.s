@@ -411,7 +411,7 @@ render_tile_line:
 	cbi   _SFR_IO_ADDR(SYNC_PORT), SYNC_PIN ; 2
 	ldi   ZL,      2
 	rjmp  .
-	call  update_sound
+	call  UpdateSound
 
 	WAIT  ZL,      232 - AUDIO_OUT_HSYNC_CYCLES - 5
 

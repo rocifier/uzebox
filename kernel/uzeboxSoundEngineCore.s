@@ -23,6 +23,7 @@
 
 .global InitSoundPort
 .global steptable
+.global waves
 .global EnableSoundEngine
 .global DisableSoundEngine
 .global SetMixerNote

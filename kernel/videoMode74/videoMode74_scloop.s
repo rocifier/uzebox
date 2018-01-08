@@ -669,7 +669,7 @@ c0rle:
 ; display portion, so I only update it proper after the display ends (by
 ; subtracting r16, the amount of lines which skipped updating it).
 ;
-; The "update_sound" function destroys r0, r1, Z and the T flag in SREG.
+; The "UpdateSound" function destroys r0, r1, Z and the T flag in SREG.
 ;
 ; HSYNC_USABLE_CYCLES:
 ; 215 (Allowing 4CH audio or either 5CH or the UART)
@@ -690,7 +690,7 @@ c0rle:
 	ldi   r18,     192     ; (   6) No. of pixels to output
 	andi  r20,     0x07    ; (   7) Mask X shift to 0 - 7
 	ldi   ZL,      2       ; (   8)
-	call  update_sound     ; (  12) (+ AUDIO)
+	call  UpdateSound      ; (  12) (+ AUDIO)
 	M74WT_R24      HSYNC_USABLE_CYCLES - AUDIO_OUT_HSYNC_CYCLES
 
 
