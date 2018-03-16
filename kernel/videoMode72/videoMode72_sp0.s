@@ -1008,7 +1008,7 @@ sp0_1next:
 
 	ldd   YL,      Z + 6   ; ( 5) NextLo
 	ldd   YH,      Z + 7   ; ( 7) NextHi
-	sbiw  Z,       2
+	sbiw  ZL,      2
 	cpi   YH,      0
 	breq  sp0_1next_lie    ; (11 / 12)
 	ld    r21,     Y+
@@ -1042,7 +1042,7 @@ sp0_1next:
 sp0_1next_lie:
 	st    Z+,      YH
 	st    Z+,      YH      ; (16)
-	adiw  Z,       8       ; (18)
+	adiw  ZL,      8       ; (18)
 	WAIT  r21,     9 + 1   ; (27 + 1)
 	; --- (Display) ---
 	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
@@ -1057,7 +1057,7 @@ sp0_4next:
 
 	ldd   YL,      Z + 6   ; ( 5) NextLo
 	ldd   YH,      Z + 7   ; ( 7) NextHi
-	sbiw  Z,       2
+	sbiw  ZL,      2
 	cpi   YH,      0
 	breq  sp0_4next_lie    ; (11 / 12)
 	ld    r21,     Y+
@@ -1091,7 +1091,7 @@ sp0_4next:
 sp0_4next_lie:
 	st    Z+,      YH
 	st    Z+,      YH      ; (16)
-	adiw  Z,       8       ; (18)
+	adiw  ZL,      8       ; (18)
 	WAIT  r21,     26 + 1  ; (44 + 1)
 	; --- (Display) ---
 	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
@@ -1106,7 +1106,7 @@ sp0_7next:
 
 	ldd   YL,      Z + 6   ; ( 5) NextLo
 	ldd   YH,      Z + 7   ; ( 7) NextHi
-	sbiw  Z,       2
+	sbiw  ZL,      2
 	cpi   YH,      0
 	breq  sp0_7next_lie    ; (11 / 12)
 	; --- (Display) ---
@@ -1144,6 +1144,6 @@ sp0_7next_lie:
 	; -----------------
 	st    Z+,      YH
 	st    Z+,      YH      ; (16)
-	adiw  Z,       8       ; (18)
+	adiw  ZL,      8       ; (18)
 	WAIT  r21,     36      ; (54)
 	ret                    ; (58)
