@@ -1910,7 +1910,7 @@ sp_next:
 
 	ldd   YL,      Z + 6   ; ( 5) NextLo
 	ldd   YH,      Z + 7   ; ( 7) NextHi
-	sbiw  Z,       2
+	sbiw  ZL,      2
 	cpi   YH,      0
 	breq  sp_next_lie      ; (11 / 12)
 	ld    r21,     Y+
@@ -1940,7 +1940,7 @@ sp_next:
 sp_next_lie:
 	st    Z+,      YH
 	st    Z+,      YH      ; (16)
-	adiw  Z,       8       ; (18)
+	adiw  ZL,      8       ; (18)
 	WAIT  r21,     36      ; (54)
 	ret                    ; (58)
 
