@@ -108,6 +108,7 @@ static void gen_common(unsigned int no, unsigned int ext)
  printf("\tout   PIXOUT,  r17\n");
  printf("\tld    ZL,      Y+\n");
  printf("\tset\n");
+ if (ext == 0U){ printf("\trjmp  .\n"); }
  printf("\tijmp\n");
  printf("tilerow_exit_%u:\n", no);
  printf("\tsbic  GPR0,    1       ; (1622) Color 0 (bg) loading enabled?\n");
@@ -432,7 +433,7 @@ int main(void)
    ** upper or lower half, whichever has more. */
 
    for (i = 0U; i < rowc; i ++){
-    if (bsize[2] >= 149U){ break; }    /* Full */
+    if (bsize[2] >= 85U){ break; }     /* Full */
     if ( ( ((rows[i].uflg & 0x7U) == 1U) &&
            (rowcl >  rowcu) ) ||
          ( ((rows[i].uflg & 0x7U) == 2U) &&
@@ -447,7 +448,7 @@ int main(void)
    ** available */
 
    for (i = 0U; i < rowc; i ++){
-    if (bsize[2] >= 149U){ break; }    /* Full */
+    if (bsize[2] >= 85U){ break; }     /* Full */
     if ((rows[i].uflg & 0x4U) == 0U){  /* Not yet used */
      bucket[2][bsize[2]] = i;
      bsize[2] ++;
@@ -481,7 +482,7 @@ int main(void)
    printf(".balign 512\n");
    printf("\n");
 
-   for (i = j; i < bsize[1]; i ++){
+   for (i = 0U; i < bsize[1]; i ++){
     gen_row(bucket[1][i], rows[bucket[1][i]].pix, 0);
    }
    gen_common(0, 0);
@@ -509,7 +510,7 @@ int main(void)
    /* Generate bottom block */
 
    gen_common(1, 0);
-   for (i = j; i < bsize[3]; i ++){
+   for (i = 0U; i < bsize[3]; i ++){
     gen_row(bucket[3][i], rows[bucket[3][i]].pix, 1);
    }
 
