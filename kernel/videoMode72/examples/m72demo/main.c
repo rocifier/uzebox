@@ -25,7 +25,7 @@
 
 
 /* Sprite images (2bpp) */
-static const unsigned char sprdata[] __attribute__ ((section (".text.align512"))) = {
+static const unsigned char sprdata[] PROGMEM = {
 
  0b00000011U, 0b11111111U,
  0b00001111U, 0b01010111U,
