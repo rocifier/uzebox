@@ -22,7 +22,7 @@
 ;
 ; Video mode 72, Sprite mode 2
 ;
-; 12 pixels wide ROM (0x8000 - 0xEFFF) / RAM sprites
+; 12 pixels wide ROM (0x0000 - 0x6FFF) / RAM sprites
 ;
 ; Sprites are available in the following manner:
 ;
@@ -367,18 +367,18 @@ sp2_bdec1:
 	ld    r3,      Z+      ; (21) Color 1
 	ld    r4,      Z+      ; (23) Color 2
 	ld    r5,      Z+      ; (25) Color 3
-	brpl  sp2_5nor         ; (26 / 27) Mirroring flag
-	cpi   YH,      0xF1    ; (27)
+	brmi  sp2_5mir         ; (26 / 27) Mirroring flag
+	cpi   YH,      0x71    ; (27)
 	brcc  sp2_5mra         ; (28 / 29)
 	movw  ZL,      YL      ; (29)
 	lpm   r21,     Z+      ; (32)
 	lpm   r1,      Z+      ; (35)
 	lpm   r0,      Z+      ; (38)
 sp2_5mre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	rjmp  sp2_5mie         ; (41)
 sp2_5mra:
-	subi  YH,      0xF0    ; (30)
+	subi  YH,      0x70    ; (30)
 	ld    r21,     Y+      ; (32)
 	ld    r1,      Y+      ; (34)
 	ld    r0,      Y+      ; (36)
@@ -392,28 +392,28 @@ sp2_5nnx:
 	WAIT  YL,      81
 	rjmp  sp2_5end         ; (95)
 sp2_5nra:
-	subi  YH,      0x70    ; (31)
+	subi  YH,      0xF0    ; (31)
 	ld    r0,      Y+      ; (33)
 	ld    r1,      Y+      ; (35)
 	ld    r21,     Y+      ; (37)
 	nop
 	rjmp  sp2_5nre         ; (40)
-sp2_5nor:
-	cpi   YH,      0x71    ; (28)
+sp2_5mir:
+	cpi   YH,      0xF1    ; (28)
 	brcc  sp2_5nra         ; (29 / 30)
-	ori   YH,      0x80    ; (30)
+	andi  YH,      0x7F    ; (30)
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
 	lpm   r21,     Z+      ; (40)
 sp2_5nre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
 sp2_5mie:
-	mov   ZL,      r0      ; (42)
+	mov   ZL,      r21     ; (42)
 	icall                  ; (59)
 	mov   ZL,      r1      ; (60)
 	icall                  ; (77)
-	mov   ZL,      r21     ; (78)
+	mov   ZL,      r0      ; (78)
 	icall                  ; (95)
 sp2_5end:
 
@@ -441,18 +441,18 @@ sp2_bdec3:
 	; -----------------
 	adc   YH,      r1
 	ld    r5,      Z+      ; (25) Color 3
-	brpl  sp2_4nor         ; (26 / 27) Mirroring flag
-	cpi   YH,      0xF1    ; (27)
+	brmi  sp2_4mir         ; (26 / 27) Mirroring flag
+	cpi   YH,      0x71    ; (27)
 	brcc  sp2_4mra         ; (28 / 29)
 	movw  ZL,      YL      ; (29)
 	lpm   r21,     Z+      ; (32)
 	lpm   r1,      Z+      ; (35)
 	lpm   r0,      Z+      ; (38)
 sp2_4mre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	rjmp  sp2_4mie         ; (41)
 sp2_4mra:
-	subi  YH,      0xF0    ; (30)
+	subi  YH,      0x70    ; (30)
 	ld    r21,     Y+      ; (32)
 	ld    r1,      Y+      ; (34)
 	ld    r0,      Y+      ; (36)
@@ -473,28 +473,28 @@ sp2_4nnx:
 	WAIT  YL,      69
 	rjmp  sp2_4end         ; (95)
 sp2_4nra:
-	subi  YH,      0x70    ; (31)
+	subi  YH,      0xF0    ; (31)
 	ld    r0,      Y+      ; (33)
 	ld    r1,      Y+      ; (35)
 	ld    r21,     Y+      ; (37)
 	nop
 	rjmp  sp2_4nre         ; (40)
-sp2_4nor:
-	cpi   YH,      0x71    ; (28)
+sp2_4mir:
+	cpi   YH,      0xF1    ; (28)
 	brcc  sp2_4nra         ; (29 / 30)
-	ori   YH,      0x80    ; (30)
+	andi  YH,      0x7F    ; (30)
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
 	lpm   r21,     Z+      ; (40)
 sp2_4nre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
 sp2_4mie:
-	mov   ZL,      r0      ; (42)
+	mov   ZL,      r21     ; (42)
 	icall                  ; (59)
 	mov   ZL,      r1      ; (60)
 	icall                  ; (77)
-	mov   ZL,      r21     ; (78)
+	mov   ZL,      r0      ; (78)
 	icall                  ; (95)
 sp2_4end:
 
@@ -522,18 +522,18 @@ sp2_bdec5:
 	ld    r3,      Z+      ; (21) Color 1
 	ld    r4,      Z+      ; (23) Color 2
 	ld    r5,      Z+      ; (25) Color 3
-	brpl  sp2_3nor         ; (26 / 27) Mirroring flag
-	cpi   YH,      0xF1    ; (27)
+	brmi  sp2_3mir         ; (26 / 27) Mirroring flag
+	cpi   YH,      0x71    ; (27)
 	brcc  sp2_3mra         ; (28 / 29)
 	movw  ZL,      YL      ; (29)
 	lpm   r21,     Z+      ; (32)
 	lpm   r1,      Z+      ; (35)
 	lpm   r0,      Z+      ; (38)
 sp2_3mre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	rjmp  sp2_3mie         ; (41)
 sp2_3mra:
-	subi  YH,      0xF0    ; (30)
+	subi  YH,      0x70    ; (30)
 	ld    r21,     Y+      ; (32)
 	ld    r1,      Y+      ; (34)
 	ld    r0,      Y+      ; (36)
@@ -551,31 +551,31 @@ sp2_3nnx:
 	WAIT  YL,      34
 	rjmp  sp2_3end         ; (95)
 sp2_3nra:
-	subi  YH,      0x70    ; (31)
+	subi  YH,      0xF0    ; (31)
 	ld    r0,      Y+      ; (33)
 	ld    r1,      Y+      ; (35)
 	ld    r21,     Y+      ; (37)
 	nop
 	rjmp  sp2_3nre         ; (40)
-sp2_3nor:
-	cpi   YH,      0x71    ; (28)
+sp2_3mir:
+	cpi   YH,      0xF1    ; (28)
 	brcc  sp2_3nra         ; (29 / 30)
-	ori   YH,      0x80    ; (30)
+	andi  YH,      0x7F    ; (30)
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
 	lpm   r21,     Z+      ; (40)
 sp2_3nre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
 sp2_3mie:
-	mov   ZL,      r0      ; (42)
+	mov   ZL,      r21     ; (42)
 	icall                  ; (59)
 	; --- (Display) ---
 	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
 	; -----------------
 	mov   ZL,      r1      ; (60)
 	icall                  ; (77)
-	mov   ZL,      r21     ; (78)
+	mov   ZL,      r0      ; (78)
 	icall                  ; (95)
 sp2_3end:
 
@@ -597,18 +597,18 @@ sp2_3end:
 	ld    r3,      Z+      ; (21) Color 1
 	ld    r4,      Z+      ; (23) Color 2
 	ld    r5,      Z+      ; (25) Color 3
-	brpl  sp2_2nor         ; (26 / 27) Mirroring flag
-	cpi   YH,      0xF1    ; (27)
+	brmi  sp2_2mir         ; (26 / 27) Mirroring flag
+	cpi   YH,      0x71    ; (27)
 	brcc  sp2_2mra         ; (28 / 29)
 	movw  ZL,      YL      ; (29)
 	lpm   r21,     Z+      ; (32)
 	lpm   r1,      Z+      ; (35)
 	lpm   r0,      Z+      ; (38)
 sp2_2mre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	rjmp  sp2_2mie         ; (41)
 sp2_2mra:
-	subi  YH,      0xF0    ; (30)
+	subi  YH,      0x70    ; (30)
 	ld    r21,     Y+      ; (32)
 	ld    r1,      Y+      ; (34)
 	ld    r0,      Y+      ; (36)
@@ -622,28 +622,28 @@ sp2_2nnx:
 	WAIT  YL,      81
 	rjmp  sp2_2end         ; (95)
 sp2_2nra:
-	subi  YH,      0x70    ; (31)
+	subi  YH,      0xF0    ; (31)
 	ld    r0,      Y+      ; (33)
 	ld    r1,      Y+      ; (35)
 	ld    r21,     Y+      ; (37)
 	nop
 	rjmp  sp2_2nre         ; (40)
-sp2_2nor:
-	cpi   YH,      0x71    ; (28)
+sp2_2mir:
+	cpi   YH,      0xF1    ; (28)
 	brcc  sp2_2nra         ; (29 / 30)
-	ori   YH,      0x80    ; (30)
+	andi  YH,      0x7F    ; (30)
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
 	lpm   r21,     Z+      ; (40)
 sp2_2nre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
 sp2_2mie:
-	mov   ZL,      r0      ; (42)
+	mov   ZL,      r21     ; (42)
 	icall                  ; (59)
 	mov   ZL,      r1      ; (60)
 	icall                  ; (77)
-	mov   ZL,      r21     ; (78)
+	mov   ZL,      r0      ; (78)
 	icall                  ; (95)
 sp2_2end:
 
@@ -671,18 +671,18 @@ sp2_2end:
 	ld    r3,      Z+      ; (21) Color 1
 	ld    r4,      Z+      ; (23) Color 2
 	ld    r5,      Z+      ; (25) Color 3
-	brpl  sp2_1nor         ; (26 / 27) Mirroring flag
-	cpi   YH,      0xF1    ; (27)
+	brmi  sp2_1mir         ; (26 / 27) Mirroring flag
+	cpi   YH,      0x71    ; (27)
 	brcc  sp2_1mra         ; (28 / 29)
 	movw  ZL,      YL      ; (29)
 	lpm   r21,     Z+      ; (32)
 	lpm   r1,      Z+      ; (35)
 	lpm   r0,      Z+      ; (38)
 sp2_1mre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	rjmp  sp2_1mie         ; (41)
 sp2_1mra:
-	subi  YH,      0xF0    ; (30)
+	subi  YH,      0x70    ; (30)
 	ld    r21,     Y+      ; (32)
 	ld    r1,      Y+      ; (34)
 	ld    r0,      Y+      ; (36)
@@ -701,28 +701,28 @@ sp2_1nne:
 	WAIT  YL,      15
 	rjmp  sp2_1end         ; (95)
 sp2_1nra:
-	subi  YH,      0x70    ; (31)
+	subi  YH,      0xF0    ; (31)
 	ld    r0,      Y+      ; (33)
 	ld    r1,      Y+      ; (35)
 	ld    r21,     Y+      ; (37)
 	nop
 	rjmp  sp2_1nre         ; (40)
-sp2_1nor:
-	cpi   YH,      0x71    ; (28)
+sp2_1mir:
+	cpi   YH,      0xF1    ; (28)
 	brcc  sp2_1nra         ; (29 / 30)
-	ori   YH,      0x80    ; (30)
+	andi  YH,      0x7F    ; (30)
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
 	lpm   r21,     Z+      ; (40)
 sp2_1nre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
 sp2_1mie:
-	mov   ZL,      r0      ; (42)
+	mov   ZL,      r21     ; (42)
 	icall                  ; (59)
 	mov   ZL,      r1      ; (60)
 	icall                  ; (77)
-	mov   ZL,      r21     ; (78)
+	mov   ZL,      r0      ; (78)
 	; --- (Display) ---
 	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
 	; -----------------
@@ -745,18 +745,18 @@ sp2_1end:
 	ld    r3,      Z+      ; (21) Color 1
 	ld    r4,      Z+      ; (23) Color 2
 	ld    r5,      Z+      ; (25) Color 3
-	brpl  sp2_0nor         ; (26 / 27) Mirroring flag
-	cpi   YH,      0xF1    ; (27)
+	brmi  sp2_0mir         ; (26 / 27) Mirroring flag
+	cpi   YH,      0x71    ; (27)
 	brcc  sp2_0mra         ; (28 / 29)
 	movw  ZL,      YL      ; (29)
 	lpm   r21,     Z+      ; (32)
 	lpm   r1,      Z+      ; (35)
 	lpm   r0,      Z+      ; (38)
 sp2_0mre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
 	rjmp  sp2_0mie         ; (41)
 sp2_0mra:
-	subi  YH,      0xF0    ; (30)
+	subi  YH,      0x70    ; (30)
 	ld    r21,     Y+      ; (32)
 	ld    r1,      Y+      ; (34)
 	ld    r0,      Y+      ; (36)
@@ -770,28 +770,28 @@ sp2_0nnx:
 	WAIT  YL,      81
 	rjmp  sp2_0end         ; (95)
 sp2_0nra:
-	subi  YH,      0x70    ; (31)
+	subi  YH,      0xF0    ; (31)
 	ld    r0,      Y+      ; (33)
 	ld    r1,      Y+      ; (35)
 	ld    r21,     Y+      ; (37)
 	nop
 	rjmp  sp2_0nre         ; (40)
-sp2_0nor:
-	cpi   YH,      0x71    ; (28)
+sp2_0mir:
+	cpi   YH,      0xF1    ; (28)
 	brcc  sp2_0nra         ; (29 / 30)
-	ori   YH,      0x80    ; (30)
+	andi  YH,      0x7F    ; (30)
 	movw  ZL,      YL      ; (31)
 	lpm   r0,      Z+      ; (34)
 	lpm   r1,      Z+      ; (37)
 	lpm   r21,     Z+      ; (40)
 sp2_0nre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
 sp2_0mie:
-	mov   ZL,      r0      ; (42)
+	mov   ZL,      r21     ; (42)
 	icall                  ; (59)
 	mov   ZL,      r1      ; (60)
 	icall                  ; (77)
-	mov   ZL,      r21     ; (78)
+	mov   ZL,      r0      ; (78)
 	icall                  ; (95)
 sp2_0end:
 
