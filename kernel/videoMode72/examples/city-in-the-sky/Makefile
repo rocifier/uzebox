@@ -3,8 +3,8 @@
 ###############################################################################
 
 ## General Flags
-PROJECT = m72demo
-GAME    = m72demo
+PROJECT = city-in-the-sky
+GAME    = city-in-the-sky
 INFO    = gameinfo.properties
 MCU     = atmega644
 TARGET  = $(GAME).elf

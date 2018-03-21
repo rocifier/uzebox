@@ -1,4 +1,4 @@
-m72demo.o: main.c \
+city-in-the-sky.o: main.c \
   c:\program\ files\winavr-20100110\bin\../lib/gcc/avr/4.3.3/include/stdbool.h \
   c:/program\ files/winavr-20100110/lib/gcc/../../avr/include/avr/io.h \
   c:/program\ files/winavr-20100110/lib/gcc/../../avr/include/avr/sfr_defs.h \
