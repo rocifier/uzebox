@@ -11,7 +11,7 @@ uzeboxVideoEngineCore.o: ../../../../kernel/uzeboxVideoEngineCore.s \
   ../../../../kernel/defines.h \
   ../../../../kernel/videoMode72/videoMode72.def.h \
   ../../../../kernel/videoMode72/videoMode72.s \
-  ../../../../kernel/videoMode72/videoMode72_sp0.s \
+  ../../../../kernel/videoMode72/videoMode72_sp5.s \
   ../../../../kernel/videoMode72/videoMode72_sp2bpp.s \
   ../../../../kernel/videoMode72/videoMode72_txt.s
 
@@ -39,7 +39,7 @@ c:/program\ files/winavr-20100110/lib/gcc/../../avr/include/avr/lock.h:
 
 ../../../../kernel/videoMode72/videoMode72.s:
 
-../../../../kernel/videoMode72/videoMode72_sp0.s:
+../../../../kernel/videoMode72/videoMode72_sp5.s:
 
 ../../../../kernel/videoMode72/videoMode72_sp2bpp.s:
 

@@ -1,12 +1,12 @@
 
 ;
-; Mode 72 tileset of 36 tiles
+; Mode 72 tileset of 19 tiles
 ;
 ;
-; Total number of tile rows:    1
-; Shared rows .............:    1
-; Upper half only rows ....:    0
-; Lower half only rows ....:    0
+; Total number of tile rows:   27
+; Shared rows .............:   17
+; Upper half only rows ....:    4
+; Lower half only rows ....:    6
 ;
 ; Chosen generator mode ...:    0
 ;
@@ -32,8 +32,8 @@
 
 
 m72_defpalette:
-	.byte 0x0B, 0x5B, 0xAD, 0x00, 0x09, 0xA2, 0xFE, 0x0E
-	.byte 0x56, 0x5C, 0xAF, 0xF6, 0xFF, 0xB1, 0xF4, 0xFF
+	.byte 0xFE, 0x5C, 0xA3, 0x52, 0xAE, 0xFF, 0xFF, 0xFF
+	.byte 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
 
 
 
@@ -97,23 +97,23 @@ tilerow_7:
 .balign 512
 tilerow_0_map:
 	rjmp  tilerow_block_0
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_1
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_17
+	rjmp  tilerow_block_18
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_22
+	rjmp  tilerow_block_23
+	rjmp  tilerow_block_24
 	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
+	rjmp  tilerow_block_25
+	rjmp  tilerow_block_26
+	rjmp  tilerow_block_26
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
@@ -357,23 +357,23 @@ tilerow_0_map:
 .balign 512
 tilerow_1_map:
 	rjmp  tilerow_block_0
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_1
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_7
+	rjmp  tilerow_block_12
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_22
+	rjmp  tilerow_block_23
+	rjmp  tilerow_block_24
 	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
+	rjmp  tilerow_block_25
+	rjmp  tilerow_block_26
+	rjmp  tilerow_block_26
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
@@ -617,23 +617,23 @@ tilerow_1_map:
 .balign 512
 tilerow_2_map:
 	rjmp  tilerow_block_0
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_3
 	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
+	rjmp  tilerow_block_7
+	rjmp  tilerow_block_12
+	rjmp  tilerow_block_17
+	rjmp  tilerow_block_18
+	rjmp  tilerow_block_19
+	rjmp  tilerow_block_19
+	rjmp  tilerow_block_22
+	rjmp  tilerow_block_23
+	rjmp  tilerow_block_24
+	rjmp  tilerow_block_25
+	rjmp  tilerow_block_25
+	rjmp  tilerow_block_26
+	rjmp  tilerow_block_26
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
@@ -877,24 +877,24 @@ tilerow_2_map:
 .balign 512
 tilerow_3_map:
 	rjmp  tilerow_block_0
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_2
+	rjmp  tilerow_block_4
 	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
+	rjmp  tilerow_block_8
+	rjmp  tilerow_block_13
+	rjmp  tilerow_block_11
+	rjmp  tilerow_block_16
+	rjmp  tilerow_block_20
+	rjmp  tilerow_block_21
+	rjmp  tilerow_block_22
+	rjmp  tilerow_block_23
+	rjmp  tilerow_block_24
+	rjmp  tilerow_block_25
+	rjmp  tilerow_block_25
+	rjmp  tilerow_block_26
+	rjmp  tilerow_block_26
+	rjmp  tilerow_block_26
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
@@ -1135,16 +1135,354 @@ tilerow_3_map:
 
 tilerow_block_0:
 	out   PIXOUT,  r1
-	st    X+,      r17
-	st    X+,      r17
-	st    X+,      r17
+	st    X+,      r2
+	st    X+,      r2
+	st    X+,      r2
 	out   PIXOUT,  r22
-	st    X+,      r17
-	st    X+,      r17
-	st    X+,      r17
+	st    X+,      r2
+	st    X+,      r2
+	st    X+,      r2
 	out   PIXOUT,  r23
-	st    X+,      r17
-	st    X+,      r17
+	st    X+,      r2
+	st    X+,      r2
+	rjmp  tilerow_common_0
+tilerow_block_1:
+	out   PIXOUT,  r1
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r22
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r23
+	st    X+,      r5
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_2:
+	out   PIXOUT,  r1
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r22
+	st    X+,      r2
+	st    X+,      r2
+	st    X+,      r5
+	out   PIXOUT,  r23
+	st    X+,      r5
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_3:
+	out   PIXOUT,  r1
+	st    X+,      r2
+	st    X+,      r2
+	st    X+,      r2
+	out   PIXOUT,  r22
+	st    X+,      r2
+	st    X+,      r2
+	st    X+,      r2
+	out   PIXOUT,  r23
+	st    X+,      r2
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_4:
+	out   PIXOUT,  r1
+	st    X+,      r2
+	st    X+,      r2
+	st    X+,      r2
+	out   PIXOUT,  r22
+	st    X+,      r2
+	st    X+,      r2
+	st    X+,      r5
+	out   PIXOUT,  r23
+	st    X+,      r5
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_5:
+	out   PIXOUT,  r1
+	st    X+,      r2
+	st    X+,      r2
+	st    X+,      r2
+	out   PIXOUT,  r22
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r23
+	st    X+,      r5
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_6:
+	out   PIXOUT,  r1
+	st    X+,      r2
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r22
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r23
+	st    X+,      r5
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_7:
+	out   PIXOUT,  r1
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r22
+	st    X+,      r5
+	st    X+,      r3
+	st    X+,      r3
+	out   PIXOUT,  r23
+	st    X+,      r3
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_8:
+	out   PIXOUT,  r1
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r22
+	st    X+,      r5
+	st    X+,      r2
+	st    X+,      r2
+	out   PIXOUT,  r23
+	st    X+,      r2
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_9:
+	out   PIXOUT,  r1
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r22
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r2
+	out   PIXOUT,  r23
+	st    X+,      r2
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_10:
+	out   PIXOUT,  r1
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r22
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r23
+	st    X+,      r2
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_11:
+	out   PIXOUT,  r1
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r22
+	st    X+,      r5
+	st    X+,      r2
+	st    X+,      r5
+	out   PIXOUT,  r23
+	st    X+,      r5
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_12:
+	out   PIXOUT,  r1
+	st    X+,      r5
+	st    X+,      r3
+	st    X+,      r3
+	out   PIXOUT,  r22
+	st    X+,      r3
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r23
+	st    X+,      r5
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_13:
+	out   PIXOUT,  r1
+	st    X+,      r5
+	st    X+,      r2
+	st    X+,      r2
+	out   PIXOUT,  r22
+	st    X+,      r2
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r23
+	st    X+,      r5
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_14:
+	out   PIXOUT,  r1
+	st    X+,      r5
+	st    X+,      r2
+	st    X+,      r2
+	out   PIXOUT,  r22
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r23
+	st    X+,      r5
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_15:
+	out   PIXOUT,  r1
+	st    X+,      r5
+	st    X+,      r2
+	st    X+,      r5
+	out   PIXOUT,  r22
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r23
+	st    X+,      r5
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_16:
+	out   PIXOUT,  r1
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r22
+	st    X+,      r2
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r23
+	st    X+,      r5
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_17:
+	out   PIXOUT,  r1
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r22
+	st    X+,      r5
+	st    X+,      r2
+	st    X+,      r2
+	out   PIXOUT,  r23
+	st    X+,      r5
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_18:
+	out   PIXOUT,  r1
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r2
+	out   PIXOUT,  r22
+	st    X+,      r2
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r23
+	st    X+,      r5
+	st    X+,      r5
+	rjmp  tilerow_common_0
+tilerow_block_19:
+	out   PIXOUT,  r1
+	st    X+,      r4
+	st    X+,      r4
+	st    X+,      r4
+	out   PIXOUT,  r22
+	st    X+,      r4
+	st    X+,      r4
+	st    X+,      r4
+	out   PIXOUT,  r23
+	st    X+,      r4
+	st    X+,      r4
+	rjmp  tilerow_common_0
+tilerow_block_20:
+	out   PIXOUT,  r1
+	st    X+,      r4
+	st    X+,      r4
+	st    X+,      r2
+	out   PIXOUT,  r22
+	st    X+,      r2
+	st    X+,      r4
+	st    X+,      r4
+	out   PIXOUT,  r23
+	st    X+,      r4
+	st    X+,      r4
+	rjmp  tilerow_common_0
+tilerow_block_21:
+	out   PIXOUT,  r1
+	st    X+,      r4
+	st    X+,      r4
+	st    X+,      r4
+	out   PIXOUT,  r22
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r4
+	out   PIXOUT,  r23
+	st    X+,      r4
+	st    X+,      r4
+	rjmp  tilerow_common_0
+tilerow_block_22:
+	out   PIXOUT,  r1
+	st    X+,      r6
+	st    X+,      r6
+	st    X+,      r6
+	out   PIXOUT,  r22
+	st    X+,      r6
+	st    X+,      r6
+	st    X+,      r6
+	out   PIXOUT,  r23
+	st    X+,      r6
+	st    X+,      r6
+	rjmp  tilerow_common_0
+tilerow_block_23:
+	out   PIXOUT,  r1
+	st    X+,      r3
+	st    X+,      r3
+	st    X+,      r3
+	out   PIXOUT,  r22
+	st    X+,      r3
+	st    X+,      r3
+	st    X+,      r3
+	out   PIXOUT,  r23
+	st    X+,      r3
+	st    X+,      r3
+	rjmp  tilerow_common_0
+tilerow_block_24:
+	out   PIXOUT,  r1
+	st    X+,      r2
+	st    X+,      r2
+	st    X+,      r2
+	out   PIXOUT,  r22
+	st    X+,      r2
+	st    X+,      r2
+	st    X+,      r6
+	out   PIXOUT,  r23
+	st    X+,      r6
+	st    X+,      r6
+	rjmp  tilerow_common_0
+tilerow_block_25:
+	out   PIXOUT,  r1
+	st    X+,      r2
+	st    X+,      r2
+	st    X+,      r2
+	out   PIXOUT,  r22
+	st    X+,      r3
+	st    X+,      r3
+	st    X+,      r3
+	out   PIXOUT,  r23
+	st    X+,      r2
+	st    X+,      r2
+	rjmp  tilerow_common_0
+tilerow_block_26:
+	out   PIXOUT,  r1
+	st    X+,      r2
+	st    X+,      r2
+	st    X+,      r5
+	out   PIXOUT,  r22
+	st    X+,      r5
+	st    X+,      r5
+	st    X+,      r5
+	out   PIXOUT,  r23
+	st    X+,      r2
+	st    X+,      r2
 	rjmp  tilerow_common_0
 
 tilerow_common_0:
@@ -1188,24 +1526,24 @@ tilerow_exit_0:
 .balign 512
 tilerow_4_map:
 	rjmp  tilerow_block_0
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_2
+	rjmp  tilerow_block_5
 	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
+	rjmp  tilerow_block_8
+	rjmp  tilerow_block_13
+	rjmp  tilerow_block_10
+	rjmp  tilerow_block_15
+	rjmp  tilerow_block_20
+	rjmp  tilerow_block_21
+	rjmp  tilerow_block_22
+	rjmp  tilerow_block_23
+	rjmp  tilerow_block_24
+	rjmp  tilerow_block_25
+	rjmp  tilerow_block_25
+	rjmp  tilerow_block_26
+	rjmp  tilerow_block_26
+	rjmp  tilerow_block_26
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
@@ -1448,24 +1786,24 @@ tilerow_4_map:
 .balign 512
 tilerow_5_map:
 	rjmp  tilerow_block_0
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_2
+	rjmp  tilerow_block_6
 	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
+	rjmp  tilerow_block_9
+	rjmp  tilerow_block_14
+	rjmp  tilerow_block_9
+	rjmp  tilerow_block_14
+	rjmp  tilerow_block_20
+	rjmp  tilerow_block_21
+	rjmp  tilerow_block_22
+	rjmp  tilerow_block_23
+	rjmp  tilerow_block_24
+	rjmp  tilerow_block_25
+	rjmp  tilerow_block_25
+	rjmp  tilerow_block_26
+	rjmp  tilerow_block_26
+	rjmp  tilerow_block_26
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
@@ -1708,24 +2046,24 @@ tilerow_5_map:
 .balign 512
 tilerow_6_map:
 	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_2
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_3
+	rjmp  tilerow_block_10
+	rjmp  tilerow_block_15
+	rjmp  tilerow_block_8
+	rjmp  tilerow_block_13
+	rjmp  tilerow_block_19
+	rjmp  tilerow_block_21
+	rjmp  tilerow_block_22
+	rjmp  tilerow_block_23
+	rjmp  tilerow_block_24
+	rjmp  tilerow_block_25
+	rjmp  tilerow_block_25
+	rjmp  tilerow_block_26
+	rjmp  tilerow_block_26
+	rjmp  tilerow_block_26
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
@@ -1968,24 +2306,24 @@ tilerow_6_map:
 .balign 512
 tilerow_7_map:
 	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
-	rjmp  tilerow_block_0
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_1
+	rjmp  tilerow_block_4
+	rjmp  tilerow_block_11
+	rjmp  tilerow_block_16
+	rjmp  tilerow_block_8
+	rjmp  tilerow_block_13
+	rjmp  tilerow_block_19
+	rjmp  tilerow_block_21
+	rjmp  tilerow_block_22
+	rjmp  tilerow_block_23
+	rjmp  tilerow_block_24
+	rjmp  tilerow_block_25
+	rjmp  tilerow_block_25
+	rjmp  tilerow_block_26
+	rjmp  tilerow_block_26
+	rjmp  tilerow_block_26
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
 	rjmp  tilerow_block_0
