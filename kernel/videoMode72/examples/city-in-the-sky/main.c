@@ -68,9 +68,10 @@ static bullet_t main_bullets[50];
 static u8 main_vram[BG_HEIGHT][BG_WIDTH];
 static u8 main_tram[256];
 
-/* " C-64 FONT " in PETSCII */
-static const unsigned char txt_data[] PROGMEM = {
- 0x20U, 0x03U, 0x2DU, 0x36U, 0x34U, 0x20U, 0x06U, 0x0FU, 0x0EU, 0x14U, 0x20U
+/* ACII */
+static const unsigned char txt_data[] PROGMEM =
+{
+	0x8DU, 0x8FU, 0x8EU, 0x85U, 0x99U, 0x20U, 0x24U, 0x31U, 0x30U, 0x30U, 0x20U
 };
 
 
@@ -112,10 +113,10 @@ void InitMode72() {
 	}
 
 	/* Configure mode */
-	m72_tt_hgt = 0U;
+	m72_tt_hgt = 10U;
 	m72_tb_hgt = 0U;
-	m72_tt_trows = 2U;
-	m72_tb_trows = 2U;
+	m72_tt_trows = 1U;
+	m72_tb_trows = 0U;
 	m72_tt_vram = &main_tram[ 0U];
 	m72_tb_vram = &main_tram[40U];
 	bordercolor = 0x52U;
