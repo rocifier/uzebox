@@ -472,19 +472,19 @@ sub_video_mode72:
 
 	; Prepare main sprites for each column
 
-	ldi   ZL,      lo8(v_sprd + 8)
-	ldi   ZH,      hi8(v_sprd + 8)
+	ldi   YL,      lo8(v_sprd)
+	ldi   YH,      hi8(v_sprd)
 	ldi   XL,      lo8(sprites)
 	ldi   XH,      hi8(sprites)
 	ldi   r24,     8       ; ( 491)
 pre_ls:
 	ld    r25,     X+      ; ( 2)
-	st    Z+,      r25
+	std   Y + 40,  r25
 	ld    r25,     X+
-	st    Z+,      r25
-	sbiw  ZL,      8       ; (10)
+	std   Y + 41,  r25
+	adiw  YL,      2       ; (10)
 	rcall sp_next          ; (68)
-	adiw  ZL,      8
+	rjmp  .
 	dec   r24
 	brne  pre_ls           ; (73) (583; 1074)
 
@@ -1902,45 +1902,45 @@ sp_b_i2:
 ;
 ; Load next sprite code for sprite modes. Assumes entry with rcall.
 ;
-; Z: Must point to the appropriate entry in the sprite list (v_sprd) + 2.
-; Y: Used to copy next sprite data
+; Y: Must point to the appropriate entry in the sprite list (v_sprd) + 2.
+; Z: Used to copy next sprite data
 ; r21: Temp
 ;
 sp_next:
 
-	ldd   YL,      Z + 6   ; ( 5) NextLo
-	ldd   YH,      Z + 7   ; ( 7) NextHi
-	sbiw  ZL,      2
-	cpi   YH,      0
+	sbiw  YL,      2
+	ldd   ZL,      Y + 40  ; ( 7) NextLo
+	ldd   ZH,      Y + 41  ; ( 9) NextHi
+	cpi   ZH,      0
 	breq  sp_next_lie      ; (11 / 12)
-	ld    r21,     Y+
-	st    Z+,      r21     ; (15) YPos
-	ld    r21,     Y+
-	st    Z+,      r21     ; (19) Height
-	ld    r21,     Y+
-	st    Z+,      r21     ; (23) OffLo
-	ld    r21,     Y+
-	st    Z+,      r21     ; (27) OffHi
-	ld    r21,     Y+
+	ld    r21,     Z+
+	st    Y+,      r21     ; (15) YPos
+	ld    r21,     Z+
+	st    Y+,      r21     ; (19) Height
+	ld    r21,     Z+
+	std   Y + 40,  r21     ; (23) OffLo
+	ld    r21,     Z+
+	std   Y + 41,  r21     ; (27) OffHi
+	ld    r21,     Z+
 	cpi   r21,     176
 	brcs  .+2
 	ldi   r21,     176
-	st    Z+,      r21     ; (34) XPos
-	ld    r21,     Y+
-	st    Z+,      r21     ; (38) Col0
-	ld    r21,     Y+
-	st    Z+,      r21     ; (42) Col1
-	ld    r21,     Y+
-	st    Z+,      r21     ; (46) Col2
-	ld    r21,     Y+
-	st    Z+,      r21     ; (50) NextLo
-	ld    r21,     Y+
-	st    Z+,      r21     ; (54) NextHi
+	std   Y + 42,  r21     ; (34) XPos
+	ld    r21,     Z+
+	st    Y+,      r21     ; (38) Col0
+	ld    r21,     Z+
+	st    Y+,      r21     ; (42) Col1
+	ld    r21,     Z+
+	st    Y+,      r21     ; (46) Col2
+	ld    r21,     Z+
+	std   Y + 35,  r21     ; (50) NextLo
+	ld    r21,     Z+
+	std   Y + 36,  r21     ; (54) NextHi
 	ret                    ; (58)
 sp_next_lie:
-	st    Z+,      YH
-	st    Z+,      YH      ; (16)
-	adiw  ZL,      8       ; (18)
+	std   Y + 0,   ZH
+	std   Y + 1,   ZH      ; (16)
+	adiw  YL,      5       ; (18)
 	WAIT  r21,     36      ; (54)
 	ret                    ; (58)
 
