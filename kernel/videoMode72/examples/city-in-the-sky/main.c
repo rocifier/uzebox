@@ -21,6 +21,26 @@
 #include <stdlib.h>
 #include <avr/pgmspace.h>
 #include <uzebox.h>
+#include "main.h"
+
+/***********************************************
+ *                    TODO
+ **********************************************/
+/*
+ * Bottom UI sprites
+ * Purchase buildings
+ * Horizontal scrolling
+ * Cursor movement snap to buildings
+ * Waves of enemies
+ * Auto-firing bullets
+ * Top bar text
+ * Tower upgrades
+ * Intro Screen
+ * Music
+ * Two player
+ * 
+ */
+
 
 
 /***********************************************
@@ -49,30 +69,111 @@ static const unsigned char cursor_sprite_data[] PROGMEM = {
  0b00001111U,0b11110000U,
 };
 
-
-/* Background */
-#define BG_WIDTH 48
-#define BG_HEIGHT 32
-#define BORDER_SIZE 2 // "no-bg" border on left and right
-#define GROUND_Y 4
-
-/* UI */
-#define SPRITE_UNMIRRORED 0x7FFFU
-#define SPRITE_MIRRORED 0xFFFFU
-#define SPRITE_INDEX_CURSOR 0
-int cursor_actioned = 0; // bitmask: we can only press each direction once before we left go of all direction buttons
+static int cursor_actioned = 0; // bitmask: we can only press each direction once before we left go of all direction buttons
 
 /* Data */
 static sprite_t cursor_sprite;
 static bullet_t main_bullets[50];
 static u8 main_vram[BG_HEIGHT][BG_WIDTH];
-static u8 main_tram[256];
+static u8 main_tram[120];
+static int p1_money = 321;
+static int p2_money = 78;
+
+static u8 build_selection[] = {0,0}; // BUILD_XXX
+static u8 selection_mode[] = {1,1};  // SELECT_XXX
 
 /* ACII */
-static const unsigned char txt_data[] PROGMEM =
+static const unsigned char txt_money[] PROGMEM = "P1 $                             P2 $   ";
+static const unsigned char txt_build[] PROGMEM = "P1+  TOWER  CHIMNEY  OFFICE  FRAME  $   P2+  TOWER  CHIMNEY  OFFICE  FRAME  $   ";
+static const unsigned char txt_upgrd[] PROGMEM = "P1+  TOWER  CHIMNEY  OFFICE  FRAME  $   P2+  TOWER  CHIMNEY  OFFICE  FRAME  $   ";
+
+
+/***********************************************
+ *                  UTILITIES
+ **********************************************/
+
+u8 ascii2petscii(u8 Character)
 {
-	0x8DU, 0x8FU, 0x8EU, 0x85U, 0x99U, 0x20U, 0x24U, 0x31U, 0x30U, 0x30U, 0x20U
-};
+	if ((Character >= '@') && (Character <= ']'))
+	{
+		return Character - 0x40;
+	}
+	if (Character == 0) {
+		return 0x20; // space
+	}
+	return Character;
+}
+
+
+/***********************************************
+ *                     MENUS
+ **********************************************/
+void RefreshPlayerMoney() {
+
+	char buffer[5] = "    ";
+
+	// load default string
+	for (u8 i = 0; i < TEXT_ROW_SIZE; i++){
+		u8 ascii = pgm_read_byte(&(txt_money[i]));
+		main_tram[i] = ascii2petscii(ascii);
+	}
+
+	// replace dollar values
+	itoa(p1_money, (char*)&buffer, 10);
+	main_tram[4] = ascii2petscii(buffer[0]);
+	main_tram[5] = ascii2petscii(buffer[1]);
+	main_tram[6] = ascii2petscii(buffer[2]);
+	itoa(p2_money, (char*)&buffer, 10);
+	main_tram[37] = ascii2petscii(buffer[0]);
+	main_tram[38] = ascii2petscii(buffer[1]);
+	main_tram[39] = ascii2petscii(buffer[2]);
+
+}
+
+void UpdateBuildMenuSelection(u8 build_selection, u8 text_row) {
+	switch(build_selection) {
+		case BUILD_TOWER:
+			main_tram[4  + TEXT_ROW_SIZE * text_row] = ascii2petscii('-');
+			main_tram[10 + TEXT_ROW_SIZE * text_row] = ascii2petscii('-');
+			main_tram[37 + TEXT_ROW_SIZE * text_row] = ascii2petscii('1'); // cost display
+			main_tram[38 + TEXT_ROW_SIZE * text_row] = ascii2petscii('0');
+			main_tram[39 + TEXT_ROW_SIZE * text_row] = ascii2petscii('0');
+			break;
+		case BUILD_CHIMNEY:
+			main_tram[11 + TEXT_ROW_SIZE * text_row] = ascii2petscii('-');
+			main_tram[19 + TEXT_ROW_SIZE * text_row] = ascii2petscii('-');
+			main_tram[37 + TEXT_ROW_SIZE * text_row] = ascii2petscii('1'); // cost display
+			main_tram[38 + TEXT_ROW_SIZE * text_row] = ascii2petscii('7');
+			main_tram[39 + TEXT_ROW_SIZE * text_row] = ascii2petscii('0');
+			break;
+		case BUILD_OFFICE:
+			main_tram[20 + TEXT_ROW_SIZE * text_row] = ascii2petscii('-');
+			main_tram[27 + TEXT_ROW_SIZE * text_row] = ascii2petscii('-');
+			main_tram[37 + TEXT_ROW_SIZE * text_row] = ascii2petscii('2'); // cost display
+			main_tram[38 + TEXT_ROW_SIZE * text_row] = ascii2petscii('3');
+			main_tram[39 + TEXT_ROW_SIZE * text_row] = ascii2petscii('0');
+			break;
+		case BUILD_FRAME:
+			main_tram[28 + TEXT_ROW_SIZE * text_row] = ascii2petscii('-');
+			main_tram[34 + TEXT_ROW_SIZE * text_row] = ascii2petscii('-');
+			main_tram[37 + TEXT_ROW_SIZE * text_row] = ascii2petscii('3'); // cost display
+			main_tram[38 + TEXT_ROW_SIZE * text_row] = ascii2petscii('0');
+			main_tram[39 + TEXT_ROW_SIZE * text_row] = ascii2petscii('0');
+			break;
+	}
+}
+
+void ShowBuildMenu(u8 player) {
+
+	// load default string
+	for (u8 i = TEXT_ROW_SIZE * player; i < TEXT_ROW_SIZE + TEXT_ROW_SIZE * player; i++){
+		u8 ascii = pgm_read_byte(&(txt_build[i]));
+		main_tram[i + TEXT_ROW_SIZE] = ascii2petscii(ascii);
+	}
+
+	// Render current player selection text
+	UpdateBuildMenuSelection(build_selection[player], player + 1);
+}
 
 
 /***********************************************
@@ -94,8 +195,8 @@ void ClearDefaultBG() {
 
 void InitMode72() {
 
-	/* Camera */
-	m72_ypos = (GROUND_Y + BORDER_SIZE) * TILE_HEIGHT; // start at bottom of map
+	/* Camera at ground level */
+	m72_ypos = (GROUND_Y + BORDER_SIZE) * TILE_HEIGHT + TEXT_BOTTOM_HEIGHT;
 
 	/* VRAM start offsets */
 	u8 i = 0U;
@@ -104,21 +205,17 @@ void InitMode72() {
 	}
 
 	/* Text mode VRAM contents */
-	do{
-		main_tram[i] = i;
-		i ++;
-	}while (i != 0U);
-	for (i = 0U; i < sizeof(txt_data); i++){
-		main_tram[i] = pgm_read_byte(&(txt_data[i]));
-	}
+	RefreshPlayerMoney();
+	ShowBuildMenu(0);
+	ShowBuildMenu(1);
 
 	/* Configure mode */
-	m72_tt_hgt = 10U;
-	m72_tb_hgt = 0U;
+	m72_tt_hgt = TEXT_TOP_HEIGHT;
+	m72_tb_hgt = TEXT_BOTTOM_HEIGHT;
 	m72_tt_trows = 1U;
-	m72_tb_trows = 0U;
-	m72_tt_vram = &main_tram[ 0U];
-	m72_tb_vram = &main_tram[40U];
+	m72_tb_trows = 2U;
+	m72_tt_vram = &main_tram[0];
+	m72_tb_vram = &main_tram[40];
 	bordercolor = 0x52U;
 
 	/* Sprite mode 5 */
@@ -129,7 +226,7 @@ void InitMode72() {
 void InitUI() {
 
 	cursor_sprite.xpos   = TILE_WIDTH * 11;
-	cursor_sprite.ypos   = TILE_HEIGHT * 6;
+	cursor_sprite.ypos   = m72_ypos;
 	cursor_sprite.off    = ((u16)&cursor_sprite_data) & SPRITE_UNMIRRORED;
 	cursor_sprite.height = 16U;
 	cursor_sprite.col1   = 0x13U;
@@ -166,36 +263,80 @@ u8 BuildingHeightAtLocation(u8 x, u8 y) {
 	
 }
 
-void InputThink() {
-	int buttons = ReadJoypad(0);
+void MoveSelectionLeft(u8 player) {
 
-	if(buttons & BTN_LEFT) {
-		if (!(cursor_actioned & BTN_LEFT)){
-			cursor_actioned |= BTN_LEFT;
+	switch(selection_mode[player]) {
+
+		case SELECT_MOVE:
 			if (cursor_sprite.xpos == TILE_WIDTH * 2) {
 				// todo: try to scroll left
 			} else {
 				cursor_sprite.xpos -= TILE_WIDTH;
 			}
-		}
+			break;
+
+		case SELECT_BUILD:
+			if (build_selection[player] == 0) {
+				build_selection[player] = 3;
+			} else {
+				build_selection[player]--;
+			}
+			ShowBuildMenu(player);
+			break;
+
+		case SELECT_UPGRADE:
+			break;
 	}
-	else if(buttons & BTN_RIGHT) {
-		if (!(cursor_actioned & BTN_RIGHT)){
-			cursor_actioned |= BTN_RIGHT;
-			if (cursor_sprite.xpos == SCREEN_TILES_H * TILE_WIDTH) {
+}
+
+void MoveSelectionRight(u8 player) {
+
+	switch(selection_mode[player]) {
+
+		case SELECT_MOVE:
+			if (cursor_sprite.xpos == TILE_WIDTH * SCREEN_TILES_H) {
 				// todo: try to scroll right
 			} else {
 				cursor_sprite.xpos += TILE_WIDTH;
 			}
+			break;
+
+		case SELECT_BUILD:
+			if (build_selection[player] == 3) {
+				build_selection[player] = 0;
+			} else {
+				build_selection[player]++;
+			}
+			ShowBuildMenu(player);
+			break;
+
+		case SELECT_UPGRADE:
+			break;
+	}
+}
+
+void InputThink() {
+	int buttons[] = { ReadJoypad(0), ReadJoypad(1) };
+
+	if(buttons[0] & BTN_LEFT) {
+		if (!(cursor_actioned & BTN_LEFT)){
+			cursor_actioned |= BTN_LEFT;
+			MoveSelectionLeft(0);
 		}
 	}
-	else if(buttons & BTN_UP) {
+	else if(buttons[0] & BTN_RIGHT) {
+		if (!(cursor_actioned & BTN_RIGHT)){
+			cursor_actioned |= BTN_RIGHT;
+			MoveSelectionRight(0);
+		}
+	}
+	else if(buttons[0] & BTN_UP) {
 		if (!(cursor_actioned & BTN_UP)){
 			cursor_actioned |= BTN_UP;
 			cursor_sprite.ypos += BuildingHeightAtLocation(cursor_sprite.xpos, cursor_sprite.ypos - 1);
 		}
 	}
-	else if(buttons & BTN_DOWN) {
+	else if(buttons[0] & BTN_DOWN) {
 		if (!(cursor_actioned & BTN_DOWN)){
 			cursor_actioned |= BTN_DOWN;
 			cursor_sprite.ypos -= BuildingHeightAtLocation(cursor_sprite.xpos, cursor_sprite.ypos);
@@ -206,7 +347,6 @@ void InputThink() {
 	}
 
 }
-
 
 /***********************************************
  *                 ENTRY POINT
