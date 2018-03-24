@@ -69,7 +69,7 @@ static const unsigned char cursor_sprite_data[] PROGMEM = {
  0b00001111U,0b11110000U,
 };
 
-static int cursor_actioned = 0; // bitmask: we can only press each direction once before we left go of all direction buttons
+static u8 cursor_actioned[] = { 0, 0 }; // bitmask: we can only press each direction once before we left go of all direction buttons
 
 /* Data */
 static sprite_t cursor_sprite;
@@ -78,14 +78,16 @@ static u8 main_vram[BG_HEIGHT][BG_WIDTH];
 static u8 main_tram[120];
 static int p1_money = 321;
 static int p2_money = 78;
+static u8 players_joined_game = 0;
 
-static u8 build_selection[] = {0,0}; // BUILD_XXX
-static u8 selection_mode[] = {1,1};  // SELECT_XXX
+static u8 build_selection[] = { BUILD_TOWER, BUILD_TOWER };
+static u8 selection_mode[] = { SELECT_MOVE, SELECT_MOVE };
 
 /* ACII */
 static const unsigned char txt_money[] PROGMEM = "P1 $                             P2 $   ";
 static const unsigned char txt_build[] PROGMEM = "P1+  TOWER  CHIMNEY  OFFICE  FRAME  $   P2+  TOWER  CHIMNEY  OFFICE  FRAME  $   ";
 static const unsigned char txt_upgrd[] PROGMEM = "P1+  TOWER  CHIMNEY  OFFICE  FRAME  $   P2+  TOWER  CHIMNEY  OFFICE  FRAME  $   ";
+static const unsigned char txt_start[] PROGMEM = "    P1 PRESS ANY BUTTON TO JOIN GAME        P2 PRESS ANY BUTTON TO JOIN GAME    ";
 
 
 /***********************************************
@@ -128,6 +130,14 @@ void RefreshPlayerMoney() {
 	main_tram[38] = ascii2petscii(buffer[1]);
 	main_tram[39] = ascii2petscii(buffer[2]);
 
+}
+
+void ShowPressAKeyToJoin(u8 player) {
+	// load default string
+	for (u8 i = TEXT_ROW_SIZE * player; i < TEXT_ROW_SIZE + TEXT_ROW_SIZE * player; i++){
+		u8 ascii = pgm_read_byte(&(txt_start[i]));
+		main_tram[i + TEXT_ROW_SIZE] = ascii2petscii(ascii);
+	}
 }
 
 void UpdateBuildMenuSelection(u8 build_selection, u8 text_row) {
@@ -175,6 +185,13 @@ void ShowBuildMenu(u8 player) {
 	UpdateBuildMenuSelection(build_selection[player], player + 1);
 }
 
+void ShowCursorContextMenu(u8 player) {
+	// show blank text
+	for (u8 i = TEXT_ROW_SIZE * player; i < TEXT_ROW_SIZE + TEXT_ROW_SIZE * player; i++){
+		main_tram[i + TEXT_ROW_SIZE] = ascii2petscii(' ');
+	}
+}
+
 
 /***********************************************
  *                INITIALISATION
@@ -206,8 +223,8 @@ void InitMode72() {
 
 	/* Text mode VRAM contents */
 	RefreshPlayerMoney();
-	ShowBuildMenu(0);
-	ShowBuildMenu(1);
+	ShowPressAKeyToJoin(0);
+	ShowPressAKeyToJoin(1);
 
 	/* Configure mode */
 	m72_tt_hgt = TEXT_TOP_HEIGHT;
@@ -273,6 +290,7 @@ void MoveSelectionLeft(u8 player) {
 			} else {
 				cursor_sprite.xpos -= TILE_WIDTH;
 			}
+			ShowCursorContextMenu(player);
 			break;
 
 		case SELECT_BUILD:
@@ -299,6 +317,7 @@ void MoveSelectionRight(u8 player) {
 			} else {
 				cursor_sprite.xpos += TILE_WIDTH;
 			}
+			ShowCursorContextMenu(player);
 			break;
 
 		case SELECT_BUILD:
@@ -318,32 +337,69 @@ void MoveSelectionRight(u8 player) {
 void InputThink() {
 	int buttons[] = { ReadJoypad(0), ReadJoypad(1) };
 
-	if(buttons[0] & BTN_LEFT) {
-		if (!(cursor_actioned & BTN_LEFT)){
-			cursor_actioned |= BTN_LEFT;
-			MoveSelectionLeft(0);
+	// Press any button to join the game
+	if (players_joined_game & 1 == 0) {
+		if (buttons[0] != 0) {
+			players_joined_game |= 1;
+			cursor_actioned[0] = buttons[0];
+			return;
 		}
 	}
-	else if(buttons[0] & BTN_RIGHT) {
-		if (!(cursor_actioned & BTN_RIGHT)){
-			cursor_actioned |= BTN_RIGHT;
-			MoveSelectionRight(0);
+	if (players_joined_game & 2 == 0) {
+		if (buttons[1] != 0) {
+			players_joined_game |= 2;
+			cursor_actioned[1] = buttons[1];
+			return;
 		}
 	}
-	else if(buttons[0] & BTN_UP) {
-		if (!(cursor_actioned & BTN_UP)){
-			cursor_actioned |= BTN_UP;
-			cursor_sprite.ypos += BuildingHeightAtLocation(cursor_sprite.xpos, cursor_sprite.ypos - 1);
+
+	// Gameplay input
+	for (u8 i = 0; i < 2; i++) {
+		if(buttons[i] & BTN_LEFT) {
+			if (!(cursor_actioned[i] & BTN_LEFT)){
+				cursor_actioned[i] |= BTN_LEFT;
+				MoveSelectionLeft(i);
+			}
 		}
-	}
-	else if(buttons[0] & BTN_DOWN) {
-		if (!(cursor_actioned & BTN_DOWN)){
-			cursor_actioned |= BTN_DOWN;
-			cursor_sprite.ypos -= BuildingHeightAtLocation(cursor_sprite.xpos, cursor_sprite.ypos);
+		else if(buttons[i] & BTN_RIGHT) {
+			if (!(cursor_actioned[i] & BTN_RIGHT)){
+				cursor_actioned[i] |= BTN_RIGHT;
+				MoveSelectionRight(0);
+			}
 		}
-	}
-	else {
-		cursor_actioned = 0;
+		else if(buttons[i] & BTN_UP) {
+			if (selection_mode[i] == SELECT_MOVE && !(cursor_actioned[i] & BTN_UP)){
+				cursor_actioned[i] |= BTN_UP;
+				cursor_sprite.ypos += BuildingHeightAtLocation(cursor_sprite.xpos, cursor_sprite.ypos - 1);
+			}
+		}
+		else if(buttons[i] & BTN_DOWN) {
+			if (selection_mode[i] == SELECT_MOVE && !(cursor_actioned[i] & BTN_DOWN)){
+				cursor_actioned[i] |= BTN_DOWN;
+				cursor_sprite.ypos -= BuildingHeightAtLocation(cursor_sprite.xpos, cursor_sprite.ypos);
+			}
+		}
+		else if(buttons[i] & BTN_A) {
+			if (selection_mode[i] == SELECT_MOVE && !(cursor_actioned[i] & BTN_A)){
+				cursor_actioned[i] |= BTN_A;
+				if (BuildingHeightAtLocation(cursor_sprite.xpos, cursor_sprite.ypos) == 0) {
+					selection_mode[i] = SELECT_BUILD;
+					ShowBuildMenu(i);
+				} else {
+					// upgrade
+				}
+			}
+		}
+		else if(buttons[i] & BTN_B) {
+			if (!(cursor_actioned[i] & BTN_B)){
+				cursor_actioned[i] |= BTN_B;
+				selection_mode[i] = SELECT_MOVE;
+				ShowCursorContextMenu(i);
+			}
+		}
+		else {
+			cursor_actioned[i] = 0;
+		}
 	}
 
 }
