@@ -22,14 +22,14 @@
 ;
 ; Video mode 72, Sprite mode 2
 ;
-; 12 pixels wide ROM (0x0000 - 0x6FFF) / RAM sprites
+; 12 pixels wide ROM (0x0000 - 0x70FF) / RAM sprites
 ;
 ; Sprites are available in the following manner:
 ;
 ; +--------------+--------------+--------------+
 ; | m72_bull_cnt | Main sprites | Bullets      |
 ; +==============+==============+==============+
-; |        0 - 1 |    6 (0 - 5) |    1 (0    ) |
+; |        0 - 2 |    6 (0 - 5) |    2 (0 - 1) |
 ; +--------------+--------------+--------------+
 ; |        2 - 3 |    5 (0 - 3) |    4 (0 - 3) |
 ; +--------------+--------------+--------------+
@@ -89,17 +89,6 @@
 
 
 
-sp2_bdec0:
-	WAIT  YL,      16
-	; --- (Display) ---
-	out   PIXOUT,  r20     ; (1698) Black border
-	; -----------------
-	lpm   YL,      Z
-	lpm   YL,      Z
-	rjmp  sp2_bdec1        ; (1706) Bullet decision jump
-
-
-
 ;
 ; Entry point
 ;
@@ -113,18 +102,7 @@ m72_sp2:
 	ldi   YH,      hi8(V_BUPT)
 
 
-	; (1636) Bullet 0 (42)
-
-	rcall sp_bullet
-
-
-	; (1678) Sprite / Bullet decision
-
-	cpi   r25,     2
-	brcs  sp2_bdec0        ; (1680 / 1681) 0 - 1 bullets
-
-
-	; (1680) Bullet 1 (36 + 1)
+	; (1636) Bullet 0 (36)
 
 	ld    ZL,      Y
 	ldd   ZH,      Y + 1
@@ -136,9 +114,70 @@ m72_sp2:
 	ldi   XL,      176     ; (12) Limit Xpos
 	ld    r3,      Z+      ; (14) Color
 	ld    r5,      Z+      ; (16) Height (bits 2-7) & Width (bits 0-1)
-	; --- (Display) ---
-	out   PIXOUT,  r20     ; (1698) Black border
-	; -----------------
+	lsr   r5               ; (17)
+	brcc  sp2_b0_13        ; (18 / 19)
+	lsr   r5               ; (19)
+	brcc  sp2_b0_2         ; (20 / 21)
+	cp    r5,      r4      ; (21)
+	brcs  sp2_b0_i0        ; (22 / 23)
+	st    X+,      r3      ; (24) 1st pixel
+	st    X+,      r3      ; (26) 2nd pixel
+	st    X+,      r3      ; (28) 3rd pixel
+sp2_b0_1e:
+	st    X+,      r3      ; (30) 4th pixel
+	breq  sp2_b0_x1        ; (31 / 32) At last px of sprite: Load next sprite
+	nop
+sp2_b0_ni:
+	adiw  YL,      2       ; (34)
+	rjmp  sp2_b0end        ; (36)
+sp2_b0_13:
+	lsr   r5               ; (20)
+	brcc  sp2_b0_1         ; (21 / 22)
+	cp    r5,      r4      ; (22)
+	brcs  sp2_b0_i1        ; (23 / 24)
+	st    X+,      r3      ; (25) 1st pixel
+sp2_b0_2e:
+	st    X+,      r3      ; (27) 2nd pixel
+	st    X+,      r3      ; (29) 3rd pixel
+	breq  sp2_b0_x0        ; (30 / 31) At last px of sprite: Load next sprite
+	rjmp  sp2_b0_ni        ; (32)
+sp2_b0_2:
+	cp    r5,      r4      ; (22)
+	brcs  sp2_b0_i1        ; (23 / 24)
+	rjmp  sp2_b0_2e        ; (25)
+sp2_b0_1:
+	cp    r5,      r4      ; (23)
+	brcs  sp2_b0_i2        ; (24 / 25)
+	rjmp  .                ; (26)
+	rjmp  sp2_b0_1e        ; (28)
+sp2_b0_i0:
+	nop                    ; (24)
+sp2_b0_i1:
+	nop                    ; (25)
+sp2_b0_i2:
+	lpm   XL,      Z       ; (28)
+	rjmp  .
+	rjmp  sp2_b0_ni        ; (32)
+sp2_b0_x0:
+	nop
+sp2_b0_x1:
+	st    Y+,      ZL
+	st    Y+,      ZH      ; (36)
+sp2_b0end:
+
+
+	; (1672) Bullet 1 (36 + 2)
+
+	ld    ZL,      Y
+	ldd   ZH,      Y + 1
+	ld    r4,      Z+      ; ( 6) YPos
+	add   r4,      r18     ; ( 7) Line within sprite acquired
+	ld    XL,      Z+      ; ( 9) Xpos
+	cpi   XL,      176
+	brcs  .+2
+	ldi   XL,      176     ; (12) Limit Xpos
+	ld    r3,      Z+      ; (14) Color
+	ld    r5,      Z+      ; (16) Height (bits 2-7) & Width (bits 0-1)
 	lsr   r5               ; (17)
 	brcc  sp2_b1_13        ; (18 / 19)
 	lsr   r5               ; (19)
@@ -146,6 +185,10 @@ m72_sp2:
 	cp    r5,      r4      ; (21)
 	brcs  sp2_b1_i0        ; (22 / 23)
 	st    X+,      r3      ; (24) 1st pixel
+	; --- (Display) ---
+	nop
+	out   PIXOUT,  r20     ; (1698) Black border
+	; -----------------
 	st    X+,      r3      ; (26) 2nd pixel
 	st    X+,      r3      ; (28) 3rd pixel
 sp2_b1_1e:
@@ -162,6 +205,10 @@ sp2_b1_13:
 	brcs  sp2_b1_i1        ; (23 / 24)
 	st    X+,      r3      ; (25) 1st pixel
 sp2_b1_2e:
+	; --- (Display) ---
+	out   PIXOUT,  r20     ; (1698) Black border
+	nop
+	; -----------------
 	st    X+,      r3      ; (27) 2nd pixel
 	st    X+,      r3      ; (29) 3rd pixel
 	breq  sp2_b1_x0        ; (30 / 31) At last px of sprite: Load next sprite
@@ -173,6 +220,10 @@ sp2_b1_2:
 sp2_b1_1:
 	cp    r5,      r4      ; (23)
 	brcs  sp2_b1_i2        ; (24 / 25)
+	; --- (Display) ---
+	nop
+	out   PIXOUT,  r20     ; (1698) Black border
+	; -----------------
 	rjmp  .                ; (26)
 	rjmp  sp2_b1_1e        ; (28)
 sp2_b1_i0:
@@ -180,6 +231,10 @@ sp2_b1_i0:
 sp2_b1_i1:
 	nop                    ; (25)
 sp2_b1_i2:
+	; --- (Display) ---
+	out   PIXOUT,  r20     ; (1698) Black border
+	nop
+	; -----------------
 	lpm   XL,      Z       ; (28)
 	rjmp  .
 	rjmp  sp2_b1_ni        ; (32)
@@ -191,94 +246,44 @@ sp2_b1_x1:
 sp2_b1end:
 
 
-	; (1717) Bullet 2 (42)
+	; (1710) Bullet decision
+
+	cpi   r25,     3
+	brcc  sp2_bl3          ; 3 or more bullets
+	ldi   YL,      lo8(v_sprd)
+	ldi   YH,      hi8(v_sprd)
+	WAIT  ZL,      1
+	rjmp  sp2_0beg         ; (1717)
+sp2_bl3:
+
+
+	; (1713) Bullet 2 (42)
 
 	rcall sp_bullet
 
 
-	; (1759) Bullet 3 (36)
+	; (1755) Bullet 3 (42)
 
-	ld    ZL,      Y
-	ldd   ZH,      Y + 1
-	ld    r4,      Z+      ; ( 6) YPos
-	add   r4,      r18     ; ( 7) Line within sprite acquired
-	ld    XL,      Z+      ; ( 9) Xpos
-	cpi   XL,      176
-	brcs  .+2
-	ldi   XL,      176     ; (12) Limit Xpos
-	ld    r3,      Z+      ; (14) Color
-	ld    r5,      Z+      ; (16) Height (bits 2-7) & Width (bits 0-1)
-	lsr   r5               ; (17)
-	brcc  sp2_b3_13        ; (18 / 19)
-	lsr   r5               ; (19)
-	brcc  sp2_b3_2         ; (20 / 21)
-	cp    r5,      r4      ; (21)
-	brcs  sp2_b3_i0        ; (22 / 23)
-	st    X+,      r3      ; (24) 1st pixel
-	st    X+,      r3      ; (26) 2nd pixel
-	st    X+,      r3      ; (28) 3rd pixel
-sp2_b3_1e:
-	st    X+,      r3      ; (30) 4th pixel
-	breq  sp2_b3_x1        ; (31 / 32) At last px of sprite: Load next sprite
-	nop
-sp2_b3_ni:
-	adiw  YL,      2       ; (34)
-	rjmp  sp2_b3end        ; (36)
-sp2_b3_13:
-	lsr   r5               ; (20)
-	brcc  sp2_b3_1         ; (21 / 22)
-	cp    r5,      r4      ; (22)
-	brcs  sp2_b3_i1        ; (23 / 24)
-	st    X+,      r3      ; (25) 1st pixel
-sp2_b3_2e:
-	st    X+,      r3      ; (27) 2nd pixel
-	st    X+,      r3      ; (29) 3rd pixel
-	breq  sp2_b3_x0        ; (30 / 31) At last px of sprite: Load next sprite
-	rjmp  sp2_b3_ni        ; (32)
-sp2_b3_2:
-	cp    r5,      r4      ; (22)
-	brcs  sp2_b3_i1        ; (23 / 24)
-	rjmp  sp2_b3_2e        ; (25)
-sp2_b3_1:
-	cp    r5,      r4      ; (23)
-	brcs  sp2_b3_i2        ; (24 / 25)
-	rjmp  .                ; (26)
-	rjmp  sp2_b3_1e        ; (28)
-sp2_b3_i0:
-	nop                    ; (24)
-sp2_b3_i1:
-	nop                    ; (25)
-sp2_b3_i2:
-	lpm   XL,      Z       ; (28)
-	rjmp  .
-	rjmp  sp2_b3_ni        ; (32)
-sp2_b3_x0:
-	nop
-sp2_b3_x1:
-	st    Y+,      ZL
-	st    Y+,      ZH      ; (36)
-sp2_b3end:
+	rcall sp_bullet
 
 
-	; (1795) Sprite / Bullet decision
+	; (1797) Bullet decision
 
 	cpi   r25,     5
-	brcc  sp2_bdec2        ; (1797 / 1798)
-	rjmp  .
-	rjmp  sp2_bdec3        ; (1801)
-sp2_bdec2:
-	WAIT  ZL,      18
+	brcc  sp2_bl5          ; 5 or more bullets
+	ldi   YL,      lo8(v_sprd)
+	ldi   YH,      hi8(v_sprd)
+	WAIT  ZL,      6
+	rjmp  sp2_1beg         ; (1809)
+sp2_bl5:
 
 
-	; (1816) Bullet 4 (36 + 2)
+	; (1800) Bullet 4 (36 + 3)
 
 	ld    ZL,      Y
 	ldd   ZH,      Y + 1
 	ld    r4,      Z+      ; ( 6) YPos
 	add   r4,      r18     ; ( 7) Line within sprite acquired
-	; --- (Display) ---
-	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
-	; -----------------
 	ld    XL,      Z+      ; ( 9) Xpos
 	cpi   XL,      176
 	brcs  .+2
@@ -291,6 +296,10 @@ sp2_bdec2:
 	brcc  sp2_b4_2         ; (20 / 21)
 	cp    r5,      r4      ; (21)
 	brcs  sp2_b4_i0        ; (22 / 23)
+	; --- (Display) ---
+	nop
+	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
+	; -----------------
 	st    X+,      r3      ; (24) 1st pixel
 	st    X+,      r3      ; (26) 2nd pixel
 	st    X+,      r3      ; (28) 3rd pixel
@@ -305,6 +314,10 @@ sp2_b4_13:
 	lsr   r5               ; (20)
 	brcc  sp2_b4_1         ; (21 / 22)
 	cp    r5,      r4      ; (22)
+	; --- (Display) ---
+	nop
+	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
+	; -----------------
 	brcs  sp2_b4_i1        ; (23 / 24)
 	st    X+,      r3      ; (25) 1st pixel
 sp2_b4_2e:
@@ -314,14 +327,26 @@ sp2_b4_2e:
 	rjmp  sp2_b4_ni        ; (32)
 sp2_b4_2:
 	cp    r5,      r4      ; (22)
+	; --- (Display) ---
+	nop
+	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
+	; -----------------
 	brcs  sp2_b4_i1        ; (23 / 24)
 	rjmp  sp2_b4_2e        ; (25)
 sp2_b4_1:
 	cp    r5,      r4      ; (23)
+	; --- (Display) ---
+	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
+	nop
+	; -----------------
 	brcs  sp2_b4_i2        ; (24 / 25)
 	rjmp  .                ; (26)
 	rjmp  sp2_b4_1e        ; (28)
 sp2_b4_i0:
+	; --- (Display) ---
+	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
+	nop
+	; -----------------
 	nop                    ; (24)
 sp2_b4_i1:
 	nop                    ; (25)
@@ -337,463 +362,447 @@ sp2_b4_x1:
 sp2_b4end:
 
 
-	; (  34) Bullet 5 (42)
+	; (  19) Bullet 5 (42)
 
 	rcall sp_bullet
 
 
-	; (  76) Bullets done, transfer
+	; (  61) Bullets done, transfer
 
-	rjmp  sp2_bdec5
+	ldi   YL,      lo8(v_sprd)
+	ldi   YH,      hi8(v_sprd)
+	WAIT  ZL,      18
+	rjmp  sp2_2beg         ; (83)
 
-sp2_bdec1:
 
+	; (1717) Sprite 0 (92)
 
-	; (1706) Sprite 5 (95)
-
-	ldi   ZL,      lo8(v_sprd + (10 * 5))
-	ldi   ZH,      hi8(v_sprd + (10 * 5))
-	ld    r0,      Z+      ; ( 4) YPos
-	add   r0,      r18     ; ( 5) Line within sprite acquired
-	ld    XL,      Z+      ; ( 7) Height
-	cp    r0,      XL
-	brcc  sp2_5ina         ; ( 9 / 10)
-	mul   r0,      r24     ; (11) r24 = 3; 12px wide sprites
-	ld    YL,      Z+      ; (13) OffLo
-	add   YL,      r0
-	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
-	adc   YH,      r1
-	ld    XL,      Z+      ; (19) XPos
-	ld    r3,      Z+      ; (21) Color 1
-	ld    r4,      Z+      ; (23) Color 2
-	ld    r5,      Z+      ; (25) Color 3
-	brmi  sp2_5mir         ; (26 / 27) Mirroring flag
-	cpi   YH,      0x71    ; (27)
-	brcc  sp2_5mra         ; (28 / 29)
-	movw  ZL,      YL      ; (29)
-	lpm   r21,     Z+      ; (32)
-	lpm   r1,      Z+      ; (35)
-	lpm   r0,      Z+      ; (38)
-sp2_5mre:
+sp2_0beg:
+	ld    r0,      Y+      ; YPos
+	add   r0,      r18     ; Line within sprite acquired
+	ld    r1,      Y+      ; Height
+	cp    r0,      r1
+	brcc  sp2_0ina         ; ( 7 /  8)
+	mul   r0,      r24     ; ( 9) r24 = 3; 12px wide sprites
+	ldd   ZL,      Y + 40  ; (11) OffLo
+	add   ZL,      r0
+	ldd   ZH,      Y + 41  ; (14) OffHi + Mirror on bit 7
+	adc   ZH,      r1
+	ldd   XL,      Y + 42  ; (17) XPos
+	ld    r3,      Y+      ; (19) Color 1
+	ld    r4,      Y+      ; (21) Color 2
+	ld    r5,      Y+      ; (23) Color 3
+	brmi  sp2_0mir         ; (24 / 25) Mirroring flag
+	cpi   ZH,      0x71    ; (25)
+	brcc  sp2_0mra         ; (26 / 27)
+	lpm   r21,     Z+      ; (29)
+	lpm   r1,      Z+      ; (32)
+	lpm   r0,      Z+      ; (35)
 	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	rjmp  sp2_5mie         ; (41)
-sp2_5mra:
-	subi  YH,      0x70    ; (30)
-	ld    r21,     Y+      ; (32)
-	ld    r1,      Y+      ; (34)
-	ld    r0,      Y+      ; (36)
-	rjmp  sp2_5mre         ; (38)
-sp2_5ina:
-	brne  sp2_5nnx         ; (11 / 12)
-	rcall sp_next          ; (69)
-	WAIT  YL,      24
-	rjmp  sp2_5end         ; (95)
-sp2_5nnx:
-	WAIT  YL,      81
-	rjmp  sp2_5end         ; (95)
-sp2_5nra:
-	subi  YH,      0xF0    ; (31)
-	ld    r0,      Y+      ; (33)
-	ld    r1,      Y+      ; (35)
-	ld    r21,     Y+      ; (37)
-	nop
-	rjmp  sp2_5nre         ; (40)
-sp2_5mir:
-	cpi   YH,      0xF1    ; (28)
-	brcc  sp2_5nra         ; (29 / 30)
-	andi  YH,      0x7F    ; (30)
-	movw  ZL,      YL      ; (31)
-	lpm   r0,      Z+      ; (34)
-	lpm   r1,      Z+      ; (37)
-	lpm   r21,     Z+      ; (40)
-sp2_5nre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-sp2_5mie:
-	mov   ZL,      r21     ; (42)
-	icall                  ; (59)
-	mov   ZL,      r1      ; (60)
-	icall                  ; (77)
-	mov   ZL,      r0      ; (78)
-	icall                  ; (95)
-sp2_5end:
-
-sp2_bdec3:
-
-
-	; (1801) Sprite 4 (95 + 2)
-
-	ldi   ZL,      lo8(v_sprd + (10 * 4))
-	ldi   ZH,      hi8(v_sprd + (10 * 4))
-	ld    r0,      Z+      ; ( 4) YPos
-	add   r0,      r18     ; ( 5) Line within sprite acquired
-	ld    XL,      Z+      ; ( 7) Height
-	cp    r0,      XL
-	brcc  sp2_4ina         ; ( 9 / 10)
-	mul   r0,      r24     ; (11) r24 = 3; 12px wide sprites
-	ld    YL,      Z+      ; (13) OffLo
-	add   YL,      r0
-	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
-	ld    XL,      Z+      ; (18) XPos
-	ld    r3,      Z+      ; (20) Color 1
-	ld    r4,      Z+      ; (22) Color 2
-	; --- (Display) ---
-	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
-	; -----------------
-	adc   YH,      r1
-	ld    r5,      Z+      ; (25) Color 3
-	brmi  sp2_4mir         ; (26 / 27) Mirroring flag
-	cpi   YH,      0x71    ; (27)
-	brcc  sp2_4mra         ; (28 / 29)
-	movw  ZL,      YL      ; (29)
-	lpm   r21,     Z+      ; (32)
-	lpm   r1,      Z+      ; (35)
-	lpm   r0,      Z+      ; (38)
-sp2_4mre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	rjmp  sp2_4mie         ; (41)
-sp2_4mra:
-	subi  YH,      0x70    ; (30)
-	ld    r21,     Y+      ; (32)
-	ld    r1,      Y+      ; (34)
-	ld    r0,      Y+      ; (36)
-	rjmp  sp2_4mre         ; (38)
-sp2_4ina:
-	lpm   YL,      Z       ; (13)
-	lpm   YL,      Z       ; (16)
-	lpm   YL,      Z       ; (19)
-	lpm   YL,      Z       ; (22)
-	; --- (Display) ---
-	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
-	; -----------------
-	brne  sp2_4nnx         ; (23 / 24)
-	rcall sp_next          ; (81)
-	WAIT  YL,      12
-	rjmp  sp2_4end         ; (95)
-sp2_4nnx:
-	WAIT  YL,      69
-	rjmp  sp2_4end         ; (95)
-sp2_4nra:
-	subi  YH,      0xF0    ; (31)
-	ld    r0,      Y+      ; (33)
-	ld    r1,      Y+      ; (35)
-	ld    r21,     Y+      ; (37)
-	nop
-	rjmp  sp2_4nre         ; (40)
-sp2_4mir:
-	cpi   YH,      0xF1    ; (28)
-	brcc  sp2_4nra         ; (29 / 30)
-	andi  YH,      0x7F    ; (30)
-	movw  ZL,      YL      ; (31)
-	lpm   r0,      Z+      ; (34)
-	lpm   r1,      Z+      ; (37)
-	lpm   r21,     Z+      ; (40)
-sp2_4nre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-sp2_4mie:
-	mov   ZL,      r21     ; (42)
-	icall                  ; (59)
-	mov   ZL,      r1      ; (60)
-	icall                  ; (77)
-	mov   ZL,      r0      ; (78)
-	icall                  ; (95)
-sp2_4end:
-
-sp2_bdec5:
-
-
-	; (  78) Sprite 3 (95 + 2 + 2)
-
-	; --- (Preload) ---
-	lds   r22,     (v_sprd + (10 * 2) + 0) ; YPos
-	; -----------------
-	ldi   ZL,      lo8(v_sprd + (10 * 3))
-	ldi   ZH,      hi8(v_sprd + (10 * 3))
-	ld    r0,      Z+      ; ( 4) YPos
-	add   r0,      r18     ; ( 5) Line within sprite acquired
-	ld    XL,      Z+      ; ( 7) Height
-	cp    r0,      XL
-	brcc  sp2_3ina         ; ( 9 / 10)
-	mul   r0,      r24     ; (11) r24 = 3; 12px wide sprites
-	ld    YL,      Z+      ; (13) OffLo
-	add   YL,      r0
-	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
-	adc   YH,      r1
-	ld    XL,      Z+      ; (19) XPos
-	ld    r3,      Z+      ; (21) Color 1
-	ld    r4,      Z+      ; (23) Color 2
-	ld    r5,      Z+      ; (25) Color 3
-	brmi  sp2_3mir         ; (26 / 27) Mirroring flag
-	cpi   YH,      0x71    ; (27)
-	brcc  sp2_3mra         ; (28 / 29)
-	movw  ZL,      YL      ; (29)
-	lpm   r21,     Z+      ; (32)
-	lpm   r1,      Z+      ; (35)
-	lpm   r0,      Z+      ; (38)
-sp2_3mre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	rjmp  sp2_3mie         ; (41)
-sp2_3mra:
-	subi  YH,      0x70    ; (30)
-	ld    r21,     Y+      ; (32)
-	ld    r1,      Y+      ; (34)
-	ld    r0,      Y+      ; (36)
-	rjmp  sp2_3mre         ; (38)
-sp2_3ina:
-	brne  sp2_3nnx         ; (11 / 12)
-	rcall sp2_3next        ; (69)
-	WAIT  YL,      24
-	rjmp  sp2_3end         ; (95)
-sp2_3nnx:
-	WAIT  YL,      47      ; (59)
-	; --- (Display) ---
-	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
-	; -----------------
-	WAIT  YL,      34
-	rjmp  sp2_3end         ; (95)
-sp2_3nra:
-	subi  YH,      0xF0    ; (31)
-	ld    r0,      Y+      ; (33)
-	ld    r1,      Y+      ; (35)
-	ld    r21,     Y+      ; (37)
-	nop
-	rjmp  sp2_3nre         ; (40)
-sp2_3mir:
-	cpi   YH,      0xF1    ; (28)
-	brcc  sp2_3nra         ; (29 / 30)
-	andi  YH,      0x7F    ; (30)
-	movw  ZL,      YL      ; (31)
-	lpm   r0,      Z+      ; (34)
-	lpm   r1,      Z+      ; (37)
-	lpm   r21,     Z+      ; (40)
-sp2_3nre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-sp2_3mie:
-	mov   ZL,      r21     ; (42)
-	icall                  ; (59)
-	; --- (Display) ---
-	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
-	; -----------------
-	mov   ZL,      r1      ; (60)
-	icall                  ; (77)
-	mov   ZL,      r0      ; (78)
-	icall                  ; (95)
-sp2_3end:
-
-
-	; ( 177) Sprite 2 (95 - 2)
-
-	ldi   ZL,      lo8(v_sprd + (10 * 2) + 1)
-	ldi   ZH,      hi8(v_sprd + (10 * 2) + 1)
-	add   r22,     r18     ; ( 5) Line within sprite acquired
-	ld    XL,      Z+      ; ( 7) Height
-	cp    r22,     XL
-	brcc  sp2_2ina         ; ( 9 / 10)
-	mul   r22,     r24     ; (11) r24 = 3; 12px wide sprites
-	ld    YL,      Z+      ; (13) OffLo
-	add   YL,      r0
-	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
-	adc   YH,      r1
-	ld    XL,      Z+      ; (19) XPos
-	ld    r3,      Z+      ; (21) Color 1
-	ld    r4,      Z+      ; (23) Color 2
-	ld    r5,      Z+      ; (25) Color 3
-	brmi  sp2_2mir         ; (26 / 27) Mirroring flag
-	cpi   YH,      0x71    ; (27)
-	brcc  sp2_2mra         ; (28 / 29)
-	movw  ZL,      YL      ; (29)
-	lpm   r21,     Z+      ; (32)
-	lpm   r1,      Z+      ; (35)
-	lpm   r0,      Z+      ; (38)
-sp2_2mre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	rjmp  sp2_2mie         ; (41)
-sp2_2mra:
-	subi  YH,      0x70    ; (30)
-	ld    r21,     Y+      ; (32)
-	ld    r1,      Y+      ; (34)
-	ld    r0,      Y+      ; (36)
-	rjmp  sp2_2mre         ; (38)
-sp2_2ina:
-	brne  sp2_2nnx         ; (11 / 12)
-	rcall sp_next          ; (69)
-	WAIT  YL,      24
-	rjmp  sp2_2end         ; (95)
-sp2_2nnx:
-	WAIT  YL,      81
-	rjmp  sp2_2end         ; (95)
-sp2_2nra:
-	subi  YH,      0xF0    ; (31)
-	ld    r0,      Y+      ; (33)
-	ld    r1,      Y+      ; (35)
-	ld    r21,     Y+      ; (37)
-	nop
-	rjmp  sp2_2nre         ; (40)
-sp2_2mir:
-	cpi   YH,      0xF1    ; (28)
-	brcc  sp2_2nra         ; (29 / 30)
-	andi  YH,      0x7F    ; (30)
-	movw  ZL,      YL      ; (31)
-	lpm   r0,      Z+      ; (34)
-	lpm   r1,      Z+      ; (37)
-	lpm   r21,     Z+      ; (40)
-sp2_2nre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-sp2_2mie:
-	mov   ZL,      r21     ; (42)
-	icall                  ; (59)
-	mov   ZL,      r1      ; (60)
-	icall                  ; (77)
-	mov   ZL,      r0      ; (78)
-	icall                  ; (95)
-sp2_2end:
-
-
-	; ( 270) Sprite 1 (95 + 6)
-
-	; --- (Preload) ---
-	lds   r22,     (v_sprd + (10 * 0) + 0) ; YPos
-	add   r22,     r18     ; Line within sprite acquired
-	lds   r23,     (v_sprd + (10 * 0) + 1) ; Height
-	; -----------------
-	ldi   ZL,      lo8(v_sprd + (10 * 1))
-	ldi   ZH,      hi8(v_sprd + (10 * 1))
-	ld    r0,      Z+      ; ( 4) YPos
-	add   r0,      r18     ; ( 5) Line within sprite acquired
-	ld    XL,      Z+      ; ( 7) Height
-	cp    r0,      XL
-	brcc  sp2_1ina         ; ( 9 / 10)
-	mul   r0,      r24     ; (11) r24 = 3; 12px wide sprites
-	ld    YL,      Z+      ; (13) OffLo
-	add   YL,      r0
-	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
-	adc   YH,      r1
-	ld    XL,      Z+      ; (19) XPos
-	ld    r3,      Z+      ; (21) Color 1
-	ld    r4,      Z+      ; (23) Color 2
-	ld    r5,      Z+      ; (25) Color 3
-	brmi  sp2_1mir         ; (26 / 27) Mirroring flag
-	cpi   YH,      0x71    ; (27)
-	brcc  sp2_1mra         ; (28 / 29)
-	movw  ZL,      YL      ; (29)
-	lpm   r21,     Z+      ; (32)
-	lpm   r1,      Z+      ; (35)
-	lpm   r0,      Z+      ; (38)
-sp2_1mre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	rjmp  sp2_1mie         ; (41)
-sp2_1mra:
-	subi  YH,      0x70    ; (30)
-	ld    r21,     Y+      ; (32)
-	ld    r1,      Y+      ; (34)
-	ld    r0,      Y+      ; (36)
-	rjmp  sp2_1mre         ; (38)
-sp2_1ina:
-	brne  sp2_1nnx         ; (11 / 12)
-	rcall sp_next          ; (69)
-	WAIT  YL,      7
-	rjmp  sp2_1nne         ; (78)
-sp2_1nnx:
-	WAIT  YL,      66
-sp2_1nne:
-	; --- (Display) ---
-	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
-	; -----------------
-	WAIT  YL,      15
-	rjmp  sp2_1end         ; (95)
-sp2_1nra:
-	subi  YH,      0xF0    ; (31)
-	ld    r0,      Y+      ; (33)
-	ld    r1,      Y+      ; (35)
-	ld    r21,     Y+      ; (37)
-	nop
-	rjmp  sp2_1nre         ; (40)
-sp2_1mir:
-	cpi   YH,      0xF1    ; (28)
-	brcc  sp2_1nra         ; (29 / 30)
-	andi  YH,      0x7F    ; (30)
-	movw  ZL,      YL      ; (31)
-	lpm   r0,      Z+      ; (34)
-	lpm   r1,      Z+      ; (37)
-	lpm   r21,     Z+      ; (40)
-sp2_1nre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
-sp2_1mie:
-	mov   ZL,      r21     ; (42)
-	icall                  ; (59)
-	mov   ZL,      r1      ; (60)
-	icall                  ; (77)
-	mov   ZL,      r0      ; (78)
-	; --- (Display) ---
-	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
-	; -----------------
-	icall                  ; (95)
-sp2_1end:
-
-
-	; ( 371) Sprite 0 (95 - 5)
-
-	ldi   ZL,      lo8(v_sprd + (10 * 0) + 2)
-	ldi   ZH,      hi8(v_sprd + (10 * 0) + 2)
-	cp    r22,     r23
-	brcc  sp2_0ina         ; ( 9 / 10)
-	mul   r22,     r24     ; (11) r24 = 3; 12px wide sprites
-	ld    YL,      Z+      ; (13) OffLo
-	add   YL,      r0
-	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
-	adc   YH,      r1
-	ld    XL,      Z+      ; (19) XPos
-	ld    r3,      Z+      ; (21) Color 1
-	ld    r4,      Z+      ; (23) Color 2
-	ld    r5,      Z+      ; (25) Color 3
-	brmi  sp2_0mir         ; (26 / 27) Mirroring flag
-	cpi   YH,      0x71    ; (27)
-	brcc  sp2_0mra         ; (28 / 29)
-	movw  ZL,      YL      ; (29)
-	lpm   r21,     Z+      ; (32)
-	lpm   r1,      Z+      ; (35)
-	lpm   r0,      Z+      ; (38)
-sp2_0mre:
-	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
-	rjmp  sp2_0mie         ; (41)
+	rjmp  sp2_0mie         ; (38)
 sp2_0mra:
-	subi  YH,      0x70    ; (30)
-	ld    r21,     Y+      ; (32)
-	ld    r1,      Y+      ; (34)
-	ld    r0,      Y+      ; (36)
-	rjmp  sp2_0mre         ; (38)
-sp2_0ina:
-	brne  sp2_0nnx         ; (11 / 12)
-	rcall sp_next          ; (69)
-	WAIT  YL,      24
-	rjmp  sp2_0end         ; (95)
-sp2_0nnx:
-	WAIT  YL,      81
-	rjmp  sp2_0end         ; (95)
-sp2_0nra:
-	subi  YH,      0xF0    ; (31)
-	ld    r0,      Y+      ; (33)
-	ld    r1,      Y+      ; (35)
-	ld    r21,     Y+      ; (37)
+	subi  ZH,      0x70    ; (28)
+	ld    r21,     Z+      ; (30)
+	ld    r1,      Z+      ; (32)
+	ld    r0,      Z+      ; (34)
 	nop
-	rjmp  sp2_0nre         ; (40)
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	rjmp  sp2_0mie         ; (38)
+sp2_0ina:
+	brne  sp2_0nnx         ; ( 9 / 10)
+	rcall sp_next          ; (67)
+	WAIT  ZL,      23
+	rjmp  sp2_0end         ; (92)
+sp2_0nnx:
+	adiw  YL,      3
+	WAIT  ZL,      78
+	rjmp  sp2_0end         ; (92)
+sp2_0nra:
+	subi  ZH,      0xF0    ; (29)
+	ld    r0,      Z+      ; (31)
+	ld    r1,      Z+      ; (33)
+	ld    r21,     Z+      ; (35)
+	rjmp  sp2_0nre         ; (37)
 sp2_0mir:
-	cpi   YH,      0xF1    ; (28)
-	brcc  sp2_0nra         ; (29 / 30)
-	andi  YH,      0x7F    ; (30)
-	movw  ZL,      YL      ; (31)
-	lpm   r0,      Z+      ; (34)
-	lpm   r1,      Z+      ; (37)
-	lpm   r21,     Z+      ; (40)
+	cpi   ZH,      0xF1    ; (26)
+	brcc  sp2_0nra         ; (27 / 28)
+	andi  ZH,      0x7F    ; (28)
+	lpm   r0,      Z+      ; (31)
+	lpm   r1,      Z+      ; (34)
+	lpm   r21,     Z+      ; (37)
 sp2_0nre:
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
 sp2_0mie:
-	mov   ZL,      r21     ; (42)
-	icall                  ; (59)
-	mov   ZL,      r1      ; (60)
-	icall                  ; (77)
-	mov   ZL,      r0      ; (78)
-	icall                  ; (95)
+	mov   ZL,      r21     ; (39)
+	icall                  ; (56)
+	mov   ZL,      r1      ; (57)
+	icall                  ; (74)
+	mov   ZL,      r0      ; (75)
+	icall                  ; (92)
 sp2_0end:
+
+
+	; (1809) Sprite 1 (92 + 2)
+
+sp2_1beg:
+	ld    r0,      Y+      ; YPos
+	add   r0,      r18     ; Line within sprite acquired
+	ld    r1,      Y+      ; Height
+	cp    r0,      r1
+	brcc  sp2_1ina         ; ( 7 /  8)
+	mul   r0,      r24     ; ( 9) r24 = 3; 12px wide sprites
+	ldd   ZL,      Y + 40  ; (11) OffLo
+	add   ZL,      r0
+	ldd   ZH,      Y + 41  ; (14) OffHi + Mirror on bit 7
+	; --- (Display) ---
+	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
+	; -----------------
+	adc   ZH,      r1
+	ldd   XL,      Y + 42  ; (17) XPos
+	ld    r3,      Y+      ; (19) Color 1
+	ld    r4,      Y+      ; (21) Color 2
+	ld    r5,      Y+      ; (23) Color 3
+	brmi  sp2_1mir         ; (24 / 25) Mirroring flag
+	cpi   ZH,      0x71    ; (25)
+	brcc  sp2_1mra         ; (26 / 27)
+	lpm   r21,     Z+      ; (29)
+	lpm   r1,      Z+      ; (32)
+	lpm   r0,      Z+      ; (35)
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	rjmp  sp2_1mie         ; (38)
+sp2_1mra:
+	subi  ZH,      0x70    ; (28)
+	ld    r21,     Z+      ; (30)
+	ld    r1,      Z+      ; (32)
+	ld    r0,      Z+      ; (34)
+	nop
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	rjmp  sp2_1mie         ; (38)
+sp2_1ina:
+	lpm   ZL,      Z
+	lpm   ZL,      Z       ; (14)
+	; --- (Display) ---
+	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
+	; -----------------
+	brne  sp2_1nnx         ; (15 / 16)
+	rcall sp_next          ; (73)
+	WAIT  ZL,      17
+	rjmp  sp2_1end         ; (92)
+sp2_1nnx:
+	adiw  YL,      3
+	WAIT  ZL,      72
+	rjmp  sp2_1end         ; (92)
+sp2_1nra:
+	subi  ZH,      0xF0    ; (29)
+	ld    r0,      Z+      ; (31)
+	ld    r1,      Z+      ; (33)
+	ld    r21,     Z+      ; (35)
+	rjmp  sp2_1nre         ; (37)
+sp2_1mir:
+	cpi   ZH,      0xF1    ; (26)
+	brcc  sp2_1nra         ; (27 / 28)
+	andi  ZH,      0x7F    ; (28)
+	lpm   r0,      Z+      ; (31)
+	lpm   r1,      Z+      ; (34)
+	lpm   r21,     Z+      ; (37)
+sp2_1nre:
+	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
+sp2_1mie:
+	mov   ZL,      r21     ; (39)
+	icall                  ; (56)
+	mov   ZL,      r1      ; (57)
+	icall                  ; (74)
+	mov   ZL,      r0      ; (75)
+	icall                  ; (92)
+sp2_1end:
+
+
+	; (  83) Sprite 2 (92 + 7 + 2)
+
+sp2_2beg:
+	ld    r0,      Y+      ; YPos
+	add   r0,      r18     ; Line within sprite acquired
+	ld    r1,      Y+      ; Height
+	cp    r0,      r1
+	brcc  sp2_2ina         ; ( 7 /  8)
+	mul   r0,      r24     ; ( 9) r24 = 3; 12px wide sprites
+	ldd   ZL,      Y + 40  ; (11) OffLo
+	add   ZL,      r0
+	ldd   ZH,      Y + 41  ; (14) OffHi + Mirror on bit 7
+	adc   ZH,      r1
+	ldd   XL,      Y + 42  ; (17) XPos
+	ld    r3,      Y+      ; (19) Color 1
+	ld    r4,      Y+      ; (21) Color 2
+	ld    r5,      Y+      ; (23) Color 3
+	brmi  sp2_2mir         ; (24 / 25) Mirroring flag
+	cpi   ZH,      0x71    ; (25)
+	brcc  sp2_2mra         ; (26 / 27)
+	lpm   r21,     Z+      ; (29)
+	lpm   r1,      Z+      ; (32)
+	lpm   r0,      Z+      ; (35)
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	rjmp  sp2_2mie         ; (38)
+sp2_2mra:
+	subi  ZH,      0x70    ; (28)
+	ld    r21,     Z+      ; (30)
+	ld    r1,      Z+      ; (32)
+	ld    r0,      Z+      ; (34)
+	nop
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	rjmp  sp2_2mie         ; (38)
+sp2_2ina:
+	brne  sp2_2nnx         ; ( 9 / 10)
+	rcall sp2_next2        ; (67) (+1)
+	WAIT  ZL,      22
+	rjmp  sp2_2end         ; (92)
+sp2_2nnx:
+	adiw  YL,      3
+	WAIT  ZL,      44      ; (56)
+	; --- (Display) ---
+	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
+	; -----------------
+	WAIT  ZL,      34
+	rjmp  sp2_2end         ; (92)
+sp2_2nra:
+	subi  ZH,      0xF0    ; (29)
+	ld    r0,      Z+      ; (31)
+	ld    r1,      Z+      ; (33)
+	ld    r21,     Z+      ; (35)
+	rjmp  sp2_2nre         ; (37)
+sp2_2mir:
+	cpi   ZH,      0xF1    ; (26)
+	brcc  sp2_2nra         ; (27 / 28)
+	andi  ZH,      0x7F    ; (28)
+	lpm   r0,      Z+      ; (31)
+	lpm   r1,      Z+      ; (34)
+	lpm   r21,     Z+      ; (37)
+sp2_2nre:
+	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
+sp2_2mie:
+	mov   ZL,      r21     ; (39)
+	icall                  ; (56)
+	; --- (Display) ---
+	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
+	; -----------------
+	mov   ZL,      r1      ; (57)
+	icall                  ; (74)
+	mov   ZL,      r0      ; (75)
+	icall                  ; (92)
+sp2_2end:
+	; --- (Padding) ---
+	lpm   ZL,      Z
+	rjmp  .
+	rjmp  .
+	; -----------------
+
+
+	; ( 184) Sprite 3 (92)
+
+	ld    r0,      Y+      ; YPos
+	add   r0,      r18     ; Line within sprite acquired
+	ld    r1,      Y+      ; Height
+	cp    r0,      r1
+	brcc  sp2_3ina         ; ( 7 /  8)
+	mul   r0,      r24     ; ( 9) r24 = 3; 12px wide sprites
+	ldd   ZL,      Y + 40  ; (11) OffLo
+	add   ZL,      r0
+	ldd   ZH,      Y + 41  ; (14) OffHi + Mirror on bit 7
+	adc   ZH,      r1
+	ldd   XL,      Y + 42  ; (17) XPos
+	ld    r3,      Y+      ; (19) Color 1
+	ld    r4,      Y+      ; (21) Color 2
+	ld    r5,      Y+      ; (23) Color 3
+	brmi  sp2_3mir         ; (24 / 25) Mirroring flag
+	cpi   ZH,      0x71    ; (25)
+	brcc  sp2_3mra         ; (26 / 27)
+	lpm   r21,     Z+      ; (29)
+	lpm   r1,      Z+      ; (32)
+	lpm   r0,      Z+      ; (35)
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	rjmp  sp2_3mie         ; (38)
+sp2_3mra:
+	subi  ZH,      0x70    ; (28)
+	ld    r21,     Z+      ; (30)
+	ld    r1,      Z+      ; (32)
+	ld    r0,      Z+      ; (34)
+	nop
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	rjmp  sp2_3mie         ; (38)
+sp2_3ina:
+	brne  sp2_3nnx         ; ( 9 / 10)
+	rcall sp_next          ; (67)
+	WAIT  ZL,      23
+	rjmp  sp2_3end         ; (92)
+sp2_3nnx:
+	adiw  YL,      3
+	WAIT  ZL,      78
+	rjmp  sp2_3end         ; (92)
+sp2_3nra:
+	subi  ZH,      0xF0    ; (29)
+	ld    r0,      Z+      ; (31)
+	ld    r1,      Z+      ; (33)
+	ld    r21,     Z+      ; (35)
+	rjmp  sp2_3nre         ; (37)
+sp2_3mir:
+	cpi   ZH,      0xF1    ; (26)
+	brcc  sp2_3nra         ; (27 / 28)
+	andi  ZH,      0x7F    ; (28)
+	lpm   r0,      Z+      ; (31)
+	lpm   r1,      Z+      ; (34)
+	lpm   r21,     Z+      ; (37)
+sp2_3nre:
+	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
+sp2_3mie:
+	mov   ZL,      r21     ; (39)
+	icall                  ; (56)
+	mov   ZL,      r1      ; (57)
+	icall                  ; (74)
+	mov   ZL,      r0      ; (75)
+	icall                  ; (92)
+sp2_3end:
+
+
+	; ( 276) Sprite 4 (92 + 2 + 1)
+
+	ld    r0,      Y+      ; YPos
+	add   r0,      r18     ; Line within sprite acquired
+	ld    r1,      Y+      ; Height
+	cp    r0,      r1
+	brcc  sp2_4ina         ; ( 7 /  8)
+	mul   r0,      r24     ; ( 9) r24 = 3; 12px wide sprites
+	ldd   ZL,      Y + 40  ; (11) OffLo
+	add   ZL,      r0
+	ldd   ZH,      Y + 41  ; (14) OffHi + Mirror on bit 7
+	adc   ZH,      r1
+	ldd   XL,      Y + 42  ; (17) XPos
+	ld    r3,      Y+      ; (19) Color 1
+	ld    r4,      Y+      ; (21) Color 2
+	ld    r5,      Y+      ; (23) Color 3
+	brmi  sp2_4mir         ; (24 / 25) Mirroring flag
+	cpi   ZH,      0x71    ; (25)
+	brcc  sp2_4mra         ; (26 / 27)
+	lpm   r21,     Z+      ; (29)
+	lpm   r1,      Z+      ; (32)
+	lpm   r0,      Z+      ; (35)
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	rjmp  sp2_4mie         ; (38)
+sp2_4mra:
+	subi  ZH,      0x70    ; (28)
+	ld    r21,     Z+      ; (30)
+	ld    r1,      Z+      ; (32)
+	ld    r0,      Z+      ; (34)
+	nop
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	rjmp  sp2_4mie         ; (38)
+sp2_4ina:
+	brne  sp2_4nnx         ; ( 9 / 10)
+	rcall sp_next          ; (67)
+	WAIT  ZL,      8       ; (75)
+sp2_4com:
+	; --- (Preload) ---
+	ld    r0,      Y+      ; YPos
+	; --- (Display) ---
+	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
+	; -----------------
+	WAIT  ZL,      15
+	rjmp  sp2_4end         ; (92)
+sp2_4nnx:
+	adiw  YL,      3
+	WAIT  ZL,      61
+	rjmp  sp2_4com         ; (75)
+sp2_4nra:
+	subi  ZH,      0xF0    ; (29)
+	ld    r0,      Z+      ; (31)
+	ld    r1,      Z+      ; (33)
+	ld    r21,     Z+      ; (35)
+	rjmp  sp2_4nre         ; (37)
+sp2_4mir:
+	cpi   ZH,      0xF1    ; (26)
+	brcc  sp2_4nra         ; (27 / 28)
+	andi  ZH,      0x7F    ; (28)
+	lpm   r0,      Z+      ; (31)
+	lpm   r1,      Z+      ; (34)
+	lpm   r21,     Z+      ; (37)
+sp2_4nre:
+	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
+sp2_4mie:
+	mov   ZL,      r21     ; (39)
+	icall                  ; (56)
+	mov   ZL,      r1      ; (57)
+	icall                  ; (74)
+	mov   ZL,      r0      ; (75)
+	; --- (Preload) ---
+	ld    r0,      Y+      ; YPos
+	; --- (Display) ---
+	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
+	; -----------------
+	icall                  ; (95)
+sp2_4end:
+
+
+	; ( 371) Sprite 5 (92 - 2)
+
+	add   r0,      r18     ; Line within sprite acquired
+	ld    r1,      Y+      ; Height
+	cp    r0,      r1
+	brcc  sp2_5ina         ; ( 7 /  8)
+	mul   r0,      r24     ; ( 9) r24 = 3; 12px wide sprites
+	ldd   ZL,      Y + 40  ; (11) OffLo
+	add   ZL,      r0
+	ldd   ZH,      Y + 41  ; (14) OffHi + Mirror on bit 7
+	adc   ZH,      r1
+	ldd   XL,      Y + 42  ; (17) XPos
+	ld    r3,      Y+      ; (19) Color 1
+	ld    r4,      Y+      ; (21) Color 2
+	ld    r5,      Y+      ; (23) Color 3
+	brmi  sp2_5mir         ; (24 / 25) Mirroring flag
+	cpi   ZH,      0x71    ; (25)
+	brcc  sp2_5mra         ; (26 / 27)
+	lpm   r21,     Z+      ; (29)
+	lpm   r1,      Z+      ; (32)
+	lpm   r0,      Z+      ; (35)
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	rjmp  sp2_5mie         ; (38)
+sp2_5mra:
+	subi  ZH,      0x70    ; (28)
+	ld    r21,     Z+      ; (30)
+	ld    r1,      Z+      ; (32)
+	ld    r0,      Z+      ; (34)
+	nop
+	ldi   ZH,      hi8(pm(m72_sp2bpp_nor))
+	rjmp  sp2_5mie         ; (38)
+sp2_5ina:
+	brne  sp2_5nnx         ; ( 9 / 10)
+	rcall sp_next          ; (67)
+	WAIT  ZL,      23
+	rjmp  sp2_5end         ; (92)
+sp2_5nnx:
+	adiw  YL,      3
+	WAIT  ZL,      78
+	rjmp  sp2_5end         ; (92)
+sp2_5nra:
+	subi  ZH,      0xF0    ; (29)
+	ld    r0,      Z+      ; (31)
+	ld    r1,      Z+      ; (33)
+	ld    r21,     Z+      ; (35)
+	rjmp  sp2_5nre         ; (37)
+sp2_5mir:
+	cpi   ZH,      0xF1    ; (26)
+	brcc  sp2_5nra         ; (27 / 28)
+	andi  ZH,      0x7F    ; (28)
+	lpm   r0,      Z+      ; (31)
+	lpm   r1,      Z+      ; (34)
+	lpm   r21,     Z+      ; (37)
+sp2_5nre:
+	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
+sp2_5mie:
+	mov   ZL,      r21     ; (39)
+	icall                  ; (56)
+	mov   ZL,      r1      ; (57)
+	icall                  ; (74)
+	mov   ZL,      r0      ; (75)
+	icall                  ; (92)
+sp2_5end:
 
 
 	; ( 461) Go on to next line
@@ -807,49 +816,54 @@ sp2_0end:
 
 
 ;
-; Routine sp_next for sprite 3
+; Load next sprite code for sprite modes. Assumes entry with rcall.
 ;
-sp2_3next:
+; Y: Must point to the appropriate entry in the sprite list (v_sprd) + 2.
+; Z: Used to copy next sprite data
+; r21: Temp
+;
+sp2_next2:
 
-	ldd   YL,      Z + 6   ; ( 5) NextLo
-	ldd   YH,      Z + 7   ; ( 7) NextHi
-	sbiw  Z,       2
-	cpi   YH,      0
-	breq  sp2_3next_lie    ; (11 / 12)
-	ld    r21,     Y+
-	st    Z+,      r21     ; (15) YPos
-	ld    r21,     Y+
-	st    Z+,      r21     ; (19) Height
-	ld    r21,     Y+
-	st    Z+,      r21     ; (23) OffLo
-	ld    r21,     Y+
-	st    Z+,      r21     ; (27) OffHi
-	ld    r21,     Y+
+	sbiw  YL,      2
+	ldd   ZL,      Y + 40  ; ( 7) NextLo
+	ldd   ZH,      Y + 41  ; ( 9) NextHi
+	cpi   ZH,      0
+	breq  sp2_next2_lie    ; (11 / 12)
+	ld    r21,     Z+
+	st    Y+,      r21     ; (15) YPos
+	ld    r21,     Z+
+	st    Y+,      r21     ; (19) Height
+	ld    r21,     Z+
+	std   Y + 40,  r21     ; (23) OffLo
+	ld    r21,     Z+
+	std   Y + 41,  r21     ; (27) OffHi
+	ld    r21,     Z+
 	cpi   r21,     176
 	brcs  .+2
 	ldi   r21,     176
-	st    Z+,      r21     ; (34) XPos
-	ld    r21,     Y+
-	st    Z+,      r21     ; (38) Col0
-	ld    r21,     Y+
-	st    Z+,      r21     ; (42) Col1
-	ld    r21,     Y+
-	st    Z+,      r21     ; (46) Col2
-	ld    r21,     Y+
+	std   Y + 42,  r21     ; (34) XPos
+	ld    r21,     Z+
+	st    Y+,      r21     ; (38) Col0
+	ld    r21,     Z+
+	st    Y+,      r21     ; (42) Col1
+	ld    r21,     Z+
+	st    Y+,      r21     ; (46) Col2
 	; --- (Display) ---
+	nop
 	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
 	; -----------------
-	st    Z+,      r21     ; (50) NextLo
-	ld    r21,     Y+
-	st    Z+,      r21     ; (54) NextHi
+	ld    r21,     Z+
+	std   Y + 35,  r21     ; (50) NextLo
+	ld    r21,     Z+
+	std   Y + 36,  r21     ; (54) NextHi
 	ret                    ; (58)
-sp2_3next_lie:
-	st    Z+,      YH
-	st    Z+,      YH      ; (16)
-	adiw  Z,       8       ; (18)
-	WAIT  r21,     30      ; (48)
+sp2_next2_lie:
+	std   Y + 0,   ZH
+	std   Y + 1,   ZH      ; (16)
+	adiw  YL,      5       ; (18)
+	WAIT  r21,     28 + 1  ; (46)
 	; --- (Display) ---
 	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
 	; -----------------
-	WAIT  r21,     6       ; (54)
+	WAIT  r21,     8       ; (54)
 	ret                    ; (58)

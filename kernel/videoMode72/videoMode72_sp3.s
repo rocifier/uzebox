@@ -184,19 +184,19 @@ sp3_b1end:
 
 	; (1718) Sprite 4 & 5 (183 + 2)
 
-	ldi   ZL,      lo8(v_sprd + (10 * 4))
-	ldi   ZH,      hi8(v_sprd + (10 * 4))
+	ldi   ZL,      lo8(v_sprd + (5 * 4))
+	ldi   ZH,      hi8(v_sprd + (5 * 4))
 	ld    r0,      Z+      ; ( 4) YPos
 	add   r0,      r18     ; ( 5) Line within sprite acquired
 	ld    XL,      Z+      ; ( 7) Height
 	cp    r0,      XL
 	brcc  sp3_4ina         ; ( 9 / 10)
 	mul   r0,      r24     ; (11) r24 = 8; 32px wide sprites
-	ld    YL,      Z+      ; (13) OffLo
+	ldd   YL,      Z + 40  ; (13) OffLo
 	add   YL,      r0
-	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
+	ldd   YH,      Z + 41  ; (16) OffHi + Mirror on bit 7
 	adc   YH,      r1
-	ld    XL,      Z+      ; (19) XPos
+	ldd   XL,      Z + 42  ; (19) XPos
 	ld    r3,      Z+      ; (21) Color 1
 	ld    r4,      Z+      ; (23) Color 2
 	ld    r5,      Z+      ; (25) Color 3
@@ -210,7 +210,7 @@ sp3_b1end:
 	icall                  ; (84)
 	ldd   ZL,      Y + 4   ; (86)
 	icall                  ; (103)
-	lds   XL,      (v_sprd + (10 * 5) + 4) ; XPos of Sprite 5
+	lds   XL,      (v_sprd + (5 * 5) + 44) ; XPos of Sprite 5
 	; --- (Display) ---
 	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
 	; -----------------
@@ -222,15 +222,15 @@ sp3_b1end:
 	rjmp  sp3_4mie         ; (147)
 sp3_4ina:
 	brne  sp3_4nnx         ; (11 / 12)
-	rcall sp_next          ; (69)
+	rcall sp3_next         ; (69)
 	WAIT  YL,      36      ; (105)
 	; --- (Display) ---
 	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
 	; -----------------
 	WAIT  YL,      16      ; (121)
-	ldi   ZL,      lo8(v_sprd + (10 * 5) + 2)
-	ldi   ZH,      hi8(v_sprd + (10 * 5) + 2)
-	rcall sp_next          ; (181)
+	ldi   ZL,      lo8(v_sprd + (5 * 5) + 2)
+	ldi   ZH,      hi8(v_sprd + (5 * 5) + 2)
+	rcall sp3_next         ; (181)
 	rjmp  sp3_4end         ; (183)
 sp3_4nnx:
 	WAIT  YL,      93
@@ -253,7 +253,7 @@ sp3_4nor:
 	; --- (Display) ---
 	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
 	; -----------------
-	lds   XL,      (v_sprd + (10 * 5) + 4) ; XPos of Sprite 5
+	lds   XL,      (v_sprd + (5 * 5) + 44) ; XPos of Sprite 5
 	ld    ZL,      Y+      ; (109)
 	icall                  ; (126)
 	ld    ZL,      Y+      ; (128)
@@ -269,24 +269,24 @@ sp3_4end:
 	; (  83) Sprite 2 & 3 (183 + 2 + 8)
 
 	; --- (Preload) ---
-	lds   r20,     (v_sprd + (10 * 0) + 0) ; YPos
-	lds   r25,     (v_sprd + (10 * 0) + 1) ; Height
-	lds   r22,     (v_sprd + (10 * 0) + 2) ; OffLo
-	lds   r23,     (v_sprd + (10 * 0) + 3) ; OffHi + Mirror on bit 7
+	lds   r20,     (v_sprd + (5 * 0) + 0) ; YPos
+	lds   r25,     (v_sprd + (5 * 0) + 1) ; Height
+	lds   r22,     (v_sprd + (5 * 0) + 42) ; OffLo
+	lds   r23,     (v_sprd + (5 * 0) + 43) ; OffHi + Mirror on bit 7
 	; -----------------
-	ldi   ZL,      lo8(v_sprd + (10 * 2))
-	ldi   ZH,      hi8(v_sprd + (10 * 2))
+	ldi   ZL,      lo8(v_sprd + (5 * 2))
+	ldi   ZH,      hi8(v_sprd + (5 * 2))
 	ld    r0,      Z+      ; ( 4) YPos
 	add   r0,      r18     ; ( 5) Line within sprite acquired
 	ld    XL,      Z+      ; ( 7) Height
 	cp    r0,      XL
 	brcc  sp3_2ina         ; ( 9 / 10)
 	mul   r0,      r24     ; (11) r24 = 8; 32px wide sprites
-	ld    YL,      Z+      ; (13) OffLo
+	ldd   YL,      Z + 40  ; (13) OffLo
 	add   YL,      r0
-	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
+	ldd   YH,      Z + 41  ; (16) OffHi + Mirror on bit 7
 	adc   YH,      r1
-	ld    XL,      Z+      ; (19) XPos
+	ldd   XL,      Z + 42  ; (19) XPos
 	ld    r3,      Z+      ; (21) Color 1
 	ld    r4,      Z+      ; (23) Color 2
 	ld    r5,      Z+      ; (25) Color 3
@@ -303,7 +303,7 @@ sp3_4end:
 	icall                  ; (84)
 	ldd   ZL,      Y + 4   ; (86)
 	icall                  ; (103)
-	lds   XL,      (v_sprd + (10 * 3) + 4) ; XPos of Sprite 3
+	lds   XL,      (v_sprd + (5 * 3) + 44) ; XPos of Sprite 3
 	ldd   ZL,      Y + 3   ; (107)
 	icall                  ; (124)
 	ldd   ZL,      Y + 2   ; (126)
@@ -317,10 +317,10 @@ sp3_2ina:
 	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
 	; -----------------
 	WAIT  YL,      15      ; (63)
-	rcall sp_next          ; (121)
-	ldi   ZL,      lo8(v_sprd + (10 * 3) + 2)
-	ldi   ZH,      hi8(v_sprd + (10 * 3) + 2)
-	rcall sp_next          ; (181)
+	rcall sp3_next         ; (121)
+	ldi   ZL,      lo8(v_sprd + (5 * 3) + 2)
+	ldi   ZH,      hi8(v_sprd + (5 * 3) + 2)
+	rcall sp3_next         ; (181)
 	rjmp  sp3_2end         ; (183)
 sp3_2nnx:
 	WAIT  YL,      36
@@ -343,7 +343,7 @@ sp3_2nor:
 	icall                  ; (86)
 	ld    ZL,      Y+      ; (88)
 	icall                  ; (105)
-	lds   XL,      (v_sprd + (10 * 3) + 4) ; XPos of Sprite 3
+	lds   XL,      (v_sprd + (5 * 3) + 44) ; XPos of Sprite 3
 	ld    ZL,      Y+      ; (109)
 	icall                  ; (126)
 	ld    ZL,      Y+      ; (128)
@@ -365,10 +365,10 @@ sp3_2end:
 	movw  YL,      r22
 	add   YL,      r0
 	adc   YH,      r1
-	lds   XL,      (v_sprd + (10 * 0) + 4) ; (19) XPos
-	lds   r3,      (v_sprd + (10 * 0) + 5) ; (21) Color 1
-	lds   r4,      (v_sprd + (10 * 0) + 6) ; (23) Color 2
-	lds   r5,      (v_sprd + (10 * 0) + 7) ; (25) Color 3
+	lds   XL,      (v_sprd + (5 * 0) + 44) ; (19) XPos
+	lds   r3,      (v_sprd + (5 * 0) + 2) ; (21) Color 1
+	lds   r4,      (v_sprd + (5 * 0) + 3) ; (23) Color 2
+	lds   r5,      (v_sprd + (5 * 0) + 4) ; (25) Color 3
 	brpl  sp3_0nor         ; (26 / 27) Mirroring flag
 	ldi   ZH,      hi8(pm(m72_sp2bpp_mir))
 	ldd   ZL,      Y + 7   ; (29)
@@ -386,7 +386,7 @@ sp3_2end:
 	rjmp  .
 	; -----------------
 	icall                  ; (103)
-	lds   XL,      (v_sprd + (10 * 1) + 4) ; XPos of Sprite 1
+	lds   XL,      (v_sprd + (5 * 1) + 44) ; XPos of Sprite 1
 	ldd   ZL,      Y + 3   ; (107)
 	icall                  ; (124)
 	ldd   ZL,      Y + 2   ; (126)
@@ -395,17 +395,17 @@ sp3_2end:
 	rjmp  sp3_0mie         ; (147)
 sp3_0ina:
 	brne  sp3_0nnx         ; (11 / 12)
-	ldi   ZL,      lo8(v_sprd + (10 * 0) + 2)
-	ldi   ZH,      hi8(v_sprd + (10 * 0) + 2)
-	rcall sp_next          ; (71)
+	ldi   ZL,      lo8(v_sprd + (5 * 0) + 2)
+	ldi   ZH,      hi8(v_sprd + (5 * 0) + 2)
+	rcall sp3_next         ; (71)
 	WAIT  YL,      5 + 10 - 3 ; (76 + 10 - 3) (-3 is for preloaded offset)
 	; --- (Display) ---
 	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
 	; -----------------
 	WAIT  YL,      45      ; (121)
-	ldi   ZL,      lo8(v_sprd + (10 * 1) + 2)
-	ldi   ZH,      hi8(v_sprd + (10 * 1) + 2)
-	rcall sp_next          ; (181)
+	ldi   ZL,      lo8(v_sprd + (5 * 1) + 2)
+	ldi   ZH,      hi8(v_sprd + (5 * 1) + 2)
+	rcall sp3_next         ; (181)
 	rjmp  sp3_0end         ; (183)
 sp3_0nnx:
 	WAIT  YL,      64 + 10 - 3
@@ -432,7 +432,7 @@ sp3_0nor:
 	; -----------------
 	ld    ZL,      Y+      ; (88)
 	icall                  ; (105)
-	lds   XL,      (v_sprd + (10 * 1) + 4) ; XPos of Sprite 1
+	lds   XL,      (v_sprd + (5 * 1) + 44) ; XPos of Sprite 1
 	ld    ZL,      Y+      ; (109)
 	icall                  ; (126)
 	ld    ZL,      Y+      ; (128)
@@ -452,3 +452,50 @@ sp3_0end:
 	pop   r0
 	out   PIXOUT,  r0      ; ( 466) Pixel 0
 	jmp   m72_graf_scan_b
+
+
+
+;
+; Load next sprite code for sprite modes. Assumes entry with rcall.
+;
+; Z: Must point to the appropriate entry in the sprite list (v_sprd) + 2.
+; Y: Used to copy next sprite data
+; r21: Temp
+;
+sp3_next:
+
+	sbiw  ZL,      2
+	ldd   YL,      Z + 40  ; ( 5) NextLo
+	ldd   YH,      Z + 41  ; ( 7) NextHi
+	cpi   YH,      0
+	breq  sp3_next_lie     ; (11 / 12)
+	ld    r21,     Y+
+	st    Z+,      r21     ; (15) YPos
+	ld    r21,     Y+
+	st    Z+,      r21     ; (19) Height
+	ld    r21,     Y+
+	std   Z + 40,  r21     ; (23) OffLo
+	ld    r21,     Y+
+	std   Z + 41,  r21     ; (27) OffHi
+	ld    r21,     Y+
+	cpi   r21,     176
+	brcs  .+2
+	ldi   r21,     176
+	std   Z + 42,  r21     ; (34) XPos
+	ld    r21,     Y+
+	st    Z+,      r21     ; (38) Col0
+	ld    r21,     Y+
+	st    Z+,      r21     ; (42) Col1
+	ld    r21,     Y+
+	st    Z+,      r21     ; (46) Col2
+	ld    r21,     Y+
+	std   Z + 35,  r21     ; (50) NextLo
+	ld    r21,     Y+
+	std   Z + 36,  r21     ; (54) NextHi
+	ret                    ; (58)
+sp3_next_lie:
+	std   Z + 0,   YH
+	std   Z + 1,   YH      ; (16)
+	adiw  ZL,      5       ; (18)
+	WAIT  r21,     36      ; (54)
+	ret                    ; (58)

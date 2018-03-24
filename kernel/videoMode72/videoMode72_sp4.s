@@ -102,30 +102,30 @@ m72_sp4:
 
 	; (1634) Sprite 0 init
 
-	ldi   ZL,      lo8(v_sprd + (10 * 0))
-	ldi   ZH,      hi8(v_sprd + (10 * 0))
+	ldi   ZL,      lo8(v_sprd + (5 * 0))
+	ldi   ZH,      hi8(v_sprd + (5 * 0))
 	ld    r0,      Z+      ; ( 4) YPos
 	add   r0,      r18     ; ( 5) Line within sprite acquired
 	ld    XL,      Z+      ; ( 7) Height
 	cp    r0,      XL
 	brcc  sp4_0ina         ; ( 9 / 10)
 	mul   r0,      r24     ; (11) r24 = 15; 60px wide sprites
-	ld    YL,      Z+      ; (13) OffLo
+	ldd   YL,      Z + 40  ; (13) OffLo
 	add   YL,      r0
-	ld    YH,      Z+      ; (16) OffHi + Mirror on bit 7
+	ldd   YH,      Z + 41  ; (16) OffHi + Mirror on bit 7
 	adc   YH,      r1
-	ld    XL,      Z+      ; (19) XPos
+	ldd   XL,      Z + 42  ; (19) XPos
 	ld    r3,      Z+      ; (21) Color 1
 	ld    r4,      Z+      ; (23) Color 2
 	ld    r5,      Z+      ; (25) Color 3
 
-	ldi   ZL,      lo8(v_sprd + (10 * 4) + 2)
-	ldi   ZH,      hi8(v_sprd + (10 * 4) + 2)
-	ld    r22,     Z+      ; (29) OffLo
+	ldi   ZL,      lo8(v_sprd + (5 * 4) + 2)
+	ldi   ZH,      hi8(v_sprd + (5 * 4) + 2)
+	ldd   r22,     Z + 40  ; (29) OffLo
 	add   r22,     r0
-	ld    r23,     Z+      ; (32) OffHi + Mirror on bit 7
+	ldd   r23,     Z + 41  ; (32) OffHi + Mirror on bit 7
 	adc   r23,     r1
-	ld    r0,      Z+      ; (35) XPos of Sprite 4
+	ldd   r0,      Z + 42  ; (35) XPos of Sprite 4
 	ld    r1,      Z+      ; (37) Color 1
 	ld    r24,     Z+      ; (39) Color 2
 	ld    r25,     Z+      ; (41) Color 3
@@ -139,40 +139,40 @@ sp4_0ina:
 	; --- (Display) ---
 	out   PIXOUT,  r20     ; (1698) Black border
 	; -----------------
-	rcall sp_next          ; (1756)
-	ldi   ZL,      lo8(v_sprd + (10 * 1) + 2)
-	ldi   ZH,      hi8(v_sprd + (10 * 1) + 2)
-	rcall sp_next          ; (1816)
+	rcall sp4_next         ; (1756)
+	ldi   ZL,      lo8(v_sprd + (5 * 1) + 2)
+	ldi   ZH,      hi8(v_sprd + (5 * 1) + 2)
+	rcall sp4_next         ; (1816)
 	WAIT  YL,      7       ; ( 3)
 	; --- (Display) ---
 	cbi   SYNC,    SYNC_P  ; (   5) Sync pulse goes low
 	; -----------------
-	ldi   ZL,      lo8(v_sprd + (10 * 2) + 2)
-	ldi   ZH,      hi8(v_sprd + (10 * 2) + 2)
-	rcall sp_next          ; (  65)
-	ldi   ZL,      lo8(v_sprd + (10 * 3) + 2)
-	ldi   ZH,      hi8(v_sprd + (10 * 3) + 2)
-	rcall sp_next          ; ( 125)
+	ldi   ZL,      lo8(v_sprd + (5 * 2) + 2)
+	ldi   ZH,      hi8(v_sprd + (5 * 2) + 2)
+	rcall sp4_next         ; (  65)
+	ldi   ZL,      lo8(v_sprd + (5 * 3) + 2)
+	ldi   ZH,      hi8(v_sprd + (5 * 3) + 2)
+	rcall sp4_next         ; ( 125)
 	WAIT  YL,      14      ; ( 139)
 	; --- (Display) ---
 	sbi   SYNC,    SYNC_P  ; ( 141) Sync pulse goes high
 	; -----------------
-	ldi   ZL,      lo8(v_sprd + (10 * 4) + 2)
-	ldi   ZH,      hi8(v_sprd + (10 * 4) + 2)
-	rcall sp_next          ; ( 201)
-	ldi   ZL,      lo8(v_sprd + (10 * 5) + 2)
-	ldi   ZH,      hi8(v_sprd + (10 * 5) + 2)
-	rcall sp_next          ; ( 261)
-	ldi   ZL,      lo8(v_sprd + (10 * 6) + 2)
-	ldi   ZH,      hi8(v_sprd + (10 * 6) + 2)
-	rcall sp_next          ; ( 321)
+	ldi   ZL,      lo8(v_sprd + (5 * 4) + 2)
+	ldi   ZH,      hi8(v_sprd + (5 * 4) + 2)
+	rcall sp4_next         ; ( 201)
+	ldi   ZL,      lo8(v_sprd + (5 * 5) + 2)
+	ldi   ZH,      hi8(v_sprd + (5 * 5) + 2)
+	rcall sp4_next         ; ( 261)
+	ldi   ZL,      lo8(v_sprd + (5 * 6) + 2)
+	ldi   ZH,      hi8(v_sprd + (5 * 6) + 2)
+	rcall sp4_next         ; ( 321)
 	WAIT  YL,      32      ; ( 353)
 	; --- (Display) ---
 	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
 	; -----------------
-	ldi   ZL,      lo8(v_sprd + (10 * 7) + 2)
-	ldi   ZH,      hi8(v_sprd + (10 * 7) + 2)
-	rcall sp_next          ; ( 414)
+	ldi   ZL,      lo8(v_sprd + (5 * 7) + 2)
+	ldi   ZH,      hi8(v_sprd + (5 * 7) + 2)
+	rcall sp4_next         ; ( 414)
 	WAIT  YL,      45      ; ( 459)
 	ldi   r20,     15      ; ( 460) For STACKL
 	rjmp  sp4_0end         ; ( 462)
@@ -215,7 +215,7 @@ sp4_0beg:
 
 	; (1739) (78)
 
-	lds   XL,      (v_sprd + (10 * 1) + 4) ; XPos of Sprite 1
+	lds   XL,      (v_sprd + (5 * 1) + 44) ; XPos of Sprite 1
 	ld    ZL,      Y+      ; ( 4)
 	icall                  ; (21)
 	ld    ZL,      Y+      ; (23)
@@ -227,7 +227,7 @@ sp4_0beg:
 
 	; (1817) (78 + 3)
 
-	lds   XL,      (v_sprd + (10 * 2) + 4) ; XPos of Sprite 2
+	lds   XL,      (v_sprd + (5 * 2) + 44) ; XPos of Sprite 2
 	ld    ZL,      Y+      ; ( 4)
 	ld    r20,     Y+      ; (+2)
 	; --- (Display) ---
@@ -243,7 +243,7 @@ sp4_0beg:
 
 	; (  78) (78 + 2)
 
-	lds   XL,      (v_sprd + (10 * 3) + 4) ; XPos of Sprite 3
+	lds   XL,      (v_sprd + (5 * 3) + 44) ; XPos of Sprite 3
 	ld    ZL,      Y+      ; ( 4)
 	icall                  ; (21)
 	ld    ZL,      Y+      ; (23)
@@ -272,7 +272,7 @@ sp4_0beg:
 
 	; ( 220) (78)
 
-	lds   XL,      (v_sprd + (10 * 5) + 4) ; XPos of Sprite 5
+	lds   XL,      (v_sprd + (5 * 5) + 44) ; XPos of Sprite 5
 	ldd   ZL,      Y + 11  ; ( 4)
 	icall                  ; (21)
 	ldd   ZL,      Y + 10  ; (23)
@@ -284,7 +284,7 @@ sp4_0beg:
 
 	; ( 298) (78 + 1 + 13 - 1)
 
-	lds   XL,      (v_sprd + (10 * 6) + 4) ; XPos of Sprite 6
+	lds   XL,      (v_sprd + (5 * 6) + 44) ; XPos of Sprite 6
 	ldd   ZL,      Y + 7   ; ( 4)
 	icall                  ; (21)
 	ldd   ZL,      Y + 6   ; (23)
@@ -297,7 +297,7 @@ sp4_0beg:
 	ldd   r21,     Y + 2
 	ldd   r22,     Y + 1
 	ld    r23,     Y
-	lds   r25,     (v_sprd + (10 * 7) + 4) ; XPos of Sprite 7
+	lds   r25,     (v_sprd + (5 * 7) + 44) ; XPos of Sprite 7
 	; --- (Display) ---
 	out   PIXOUT,  r17     ; ( 354) Next scanline colored border begins
 	; -----------------
@@ -326,3 +326,50 @@ sp4_0end:
 	pop   r0
 	out   PIXOUT,  r0      ; ( 466) Pixel 0
 	jmp   m72_graf_scan_b
+
+
+
+;
+; Load next sprite code for sprite modes. Assumes entry with rcall.
+;
+; Z: Must point to the appropriate entry in the sprite list (v_sprd) + 2.
+; Y: Used to copy next sprite data
+; r21: Temp
+;
+sp4_next:
+
+	sbiw  ZL,      2
+	ldd   YL,      Z + 40  ; ( 5) NextLo
+	ldd   YH,      Z + 41  ; ( 7) NextHi
+	cpi   YH,      0
+	breq  sp4_next_lie     ; (11 / 12)
+	ld    r21,     Y+
+	st    Z+,      r21     ; (15) YPos
+	ld    r21,     Y+
+	st    Z+,      r21     ; (19) Height
+	ld    r21,     Y+
+	std   Z + 40,  r21     ; (23) OffLo
+	ld    r21,     Y+
+	std   Z + 41,  r21     ; (27) OffHi
+	ld    r21,     Y+
+	cpi   r21,     176
+	brcs  .+2
+	ldi   r21,     176
+	std   Z + 42,  r21     ; (34) XPos
+	ld    r21,     Y+
+	st    Z+,      r21     ; (38) Col0
+	ld    r21,     Y+
+	st    Z+,      r21     ; (42) Col1
+	ld    r21,     Y+
+	st    Z+,      r21     ; (46) Col2
+	ld    r21,     Y+
+	std   Z + 35,  r21     ; (50) NextLo
+	ld    r21,     Y+
+	std   Z + 36,  r21     ; (54) NextHi
+	ret                    ; (58)
+sp4_next_lie:
+	std   Z + 0,   YH
+	std   Z + 1,   YH      ; (16)
+	adiw  ZL,      5       ; (18)
+	WAIT  r21,     36      ; (54)
+	ret                    ; (58)
