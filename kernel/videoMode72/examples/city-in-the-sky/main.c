@@ -46,11 +46,15 @@ static const unsigned char cursor_sprite_data[] PROGMEM = {
  0b00001100U,0b00110000U,
  0b00001111U,0b11110000U,
 };
+static const unsigned char debug_sprite_data[] PROGMEM = {
+ 0b11111111U,0b11111111U
+};
 
 static int cursor_actioned[] = { 0, 0 }; // large bitmask: we can only press each direction once before we left go of all direction buttons
 
 /* Data */
 static sprite_t cursor_sprite;
+static sprite_t debug_sprite;
 static bullet_t main_bullets[50];
 static u8 main_vram[BG_HEIGHT][BG_WIDTH];
 static u8 main_tram[120];
@@ -65,6 +69,9 @@ static const unsigned char txt_money[] PROGMEM = "P1 $                          
 static const unsigned char txt_build[] PROGMEM = "P1+  TOWER  CHIMNEY  OFFICE  FRAME  $   P2+  TOWER  CHIMNEY  OFFICE  FRAME  $   ";
 static const unsigned char txt_upgrd[] PROGMEM = "P1+  TOWER  CHIMNEY  OFFICE  FRAME  $   P2+  TOWER  CHIMNEY  OFFICE  FRAME  $   ";
 static const unsigned char txt_start[] PROGMEM = "    P1 PRESS ANY BUTTON TO JOIN GAME        P2 PRESS ANY BUTTON TO JOIN GAME    ";
+static const unsigned char txt_block[] PROGMEM = "       NO SPACE TO PLACE BUILDING              NO SPACE TO PLACE BUILDING       ";
+static const unsigned char txt_inval[] PROGMEM = "            INVALID PLACEMENT                       INVALID PLACEMENT           ";
+static const unsigned char txt_nocas[] PROGMEM = "    NOT ENOUGH MONEY TO BUY BUILDING        NOT ENOUGH MONEY TO BUY BUILDING    ";
 
 
 /***********************************************
@@ -83,12 +90,20 @@ u8 ascii2petscii(u8 Character)
 	return Character;
 }
 
+u8 WorldXToScreenX(u8 x) {
+	return (x + BORDER_SIZE) * 8; // todo: hscroll
+}
+
 u8 ScreenXToWorldX(u8 x) {
 	return x / 8 - BORDER_SIZE; // todo: hscroll
 }
 
 u8 ScreenYToWorldY(u8 y) {
-	return (y + (int)m72_ypos) / 8 + 11;
+	return ((FRAME_LINES - (int)y) + m72_ypos) / TILE_HEIGHT + 3;
+}
+
+u8 WorldYToScreenY(u8 y) {
+	return -TILE_HEIGHT * y + FRAME_LINES + m72_ypos + 3 * TILE_HEIGHT;
 }
 
 
@@ -177,6 +192,27 @@ void ShowCursorContextMenu(u8 player) {
 	}
 }
 
+void ShowNotEnoughMoney(u8 player) {
+	for (u8 i = TEXT_ROW_SIZE * player; i < TEXT_ROW_SIZE + TEXT_ROW_SIZE * player; i++){
+		u8 ascii = pgm_read_byte(&(txt_nocas[i]));
+		main_tram[i + TEXT_ROW_SIZE] = ascii2petscii(ascii);
+	}
+}
+
+void ShowNoSpaceForBuilding(u8 player) {
+	for (u8 i = TEXT_ROW_SIZE * player; i < TEXT_ROW_SIZE + TEXT_ROW_SIZE * player; i++){
+		u8 ascii = pgm_read_byte(&(txt_block[i]));
+		main_tram[i + TEXT_ROW_SIZE] = ascii2petscii(ascii);
+	}
+}
+
+void ShowInvalidPlaceForBuilding(u8 player) {
+	for (u8 i = TEXT_ROW_SIZE * player; i < TEXT_ROW_SIZE + TEXT_ROW_SIZE * player; i++){
+		u8 ascii = pgm_read_byte(&(txt_inval[i]));
+		main_tram[i + TEXT_ROW_SIZE] = ascii2petscii(ascii);
+	}
+}
+
 
 /***********************************************
  *                INITIALISATION
@@ -236,6 +272,15 @@ void InitUI() {
 	cursor_sprite.col3   = 0x7FU;
 	sprites[SPRITE_INDEX_CURSOR] = &cursor_sprite;
 
+	debug_sprite.xpos   = TILE_WIDTH * 7;
+	debug_sprite.ypos   = 96;
+	debug_sprite.off    = ((u16)&debug_sprite_data) & SPRITE_UNMIRRORED;
+	debug_sprite.height = 1U;
+	debug_sprite.col1   = 0x10U;
+	debug_sprite.col2   = 0x40U;
+	debug_sprite.col3   = 0x70U;
+	sprites[0] = &debug_sprite;
+
 }
 
 /***********************************************
@@ -251,15 +296,46 @@ u8 BuildingHeightAtLocation(u8 screen_x, u8 screen_y) {
 	u8 buildingAtLocation = main_vram[y][x];
 
 	switch(buildingAtLocation) {
-		case 0: // sky
+		case TILE_SKY_A:
 			return 0;
-		case 1: // solid block: tower or ground
+		case TILE_SOLID_A:
 			if (y >= (BG_HEIGHT - GROUND_Y)) {
 				return 0;
 			} else {
+				// tower or tier 3 chimney C are both 3 tiles
 				return 3 * TILE_HEIGHT;
 			}
-		case 2:
+		case TILE_TOWER_WINDOW_A:
+			return 3 * TILE_HEIGHT;
+		case TILE_TOWER_ROOF_A:
+			return 3 * TILE_HEIGHT;
+		case TILE_TOWER_ROOFTIP_A:
+			return 1 * TILE_HEIGHT;
+		case TILE_FRAME_NW_A:
+			return 2 * TILE_HEIGHT;
+		case TILE_FRAME_NE_A:
+			return 2 * TILE_HEIGHT;
+		case TILE_FRAME_SW_A:
+			return 2 * TILE_HEIGHT;
+		case TILE_FRAME_SE_A:
+			return 2 * TILE_HEIGHT;
+		case TILE_OFFICE_WINDOW_A:
+			return 1 * TILE_HEIGHT;
+		case TILE_OFFICE_DOOR_A:
+			return 1 * TILE_HEIGHT;
+		case TILE_SOLID_B:
+			return 2 * TILE_HEIGHT;
+		case TILE_SOLID_C:
+			return 3 * TILE_HEIGHT;
+		case TILE_CHIMNEY_STACK_A:
+			return 2 * TILE_HEIGHT;
+		case TILE_CHIMNEY_STACK1_B:
+			return 2 * TILE_HEIGHT;
+		case TILE_CHIMNEY_STACK1_C:
+			return 3 * TILE_HEIGHT;
+		case TILE_CHIMNEY_STACK2_C:
+			return 3 * TILE_HEIGHT;
+		case TILE_CHIMNEY_STACK3_C:
 			return 3 * TILE_HEIGHT;
 		default:
 			return 0;
@@ -321,23 +397,10 @@ void MoveSelectionRight(u8 player) {
 	}
 }
 
-void ShowNotEnoughMoney(u8 player) {
-
-}
-
-void ShowNoSpaceForBuilding(u8 player) {
-
-}
-
-void ShowInvalidPlaceForBuilding(u8 player) {
-
-}
-
 //
-// Try to place a tower at tile position (x,y).
+// Try to place a tower at a cursor's position on screen.
 // A tower might have a spacial conflict,
-// be too expensive for the player,
-// or 
+// or be too expensive for the player.
 //
 void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
 
@@ -362,11 +425,14 @@ void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
 	// Next check there are sky tiles where building must go
 	u8 x = ScreenXToWorldX(screen_x);
 	u8 y = ScreenYToWorldY(screen_y);
+
 	switch(tower_type) {
 		case BUILD_TOWER:
-			if (main_vram[y][x] > 0 || main_vram[y-1][x] > 0 || main_vram[y-2][x] > 0) {
-				ShowNoSpaceForBuilding(player);
-				return;
+			if ((main_vram[y][x] > 0 && main_vram[y][x] != TILE_TOWER_ROOF_A) ||
+				 main_vram[y-1][x] > 0 ||
+				 main_vram[y-2][x] > 0) {
+					ShowNoSpaceForBuilding(player);
+					return;
 			}
 			break;
 	}
@@ -374,9 +440,10 @@ void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
 	// Next check if this is a valid location for the building
 	switch(tower_type) {
 		case BUILD_TOWER:
-			if ((main_vram[y+1][x] >= TILE_CHIMNEY_STACK_A && main_vram[y+1][x] <= TILE_CHIMNEY_STACK2_C) ||
-				(main_vram[y+1][x] == TILE_TOWER_ROOF_A) || (main_vram[y+1][x] == TILE_TOWER_ROOFTIP_A)) {
+			if ((main_vram[y+1][x] >= TILE_CHIMNEY_STACK_A && main_vram[y+1][x] <= TILE_CHIMNEY_STACK3_C) ||
+				(main_vram[y+1][x] == TILE_TOWER_ROOFTIP_A)) {
 				ShowInvalidPlaceForBuilding(player);
+				return;
 			}
 			break;
 	}
@@ -387,6 +454,15 @@ void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
 			main_vram[y-0][x] = TILE_SOLID_A;
 			main_vram[y-1][x] = TILE_TOWER_WINDOW_A;
 			main_vram[y-2][x] = TILE_TOWER_ROOF_A;
+
+			// if we stacked towers, convert the roof below to a solid tile
+			// and remove the roof tip if there was one there.
+			if (main_vram[y+1][x] == TILE_TOWER_ROOF_A) {
+				main_vram[y+1][x] = TILE_SOLID_A;
+				if (main_vram[y+1][x-1] == TILE_TOWER_ROOFTIP_A) {
+					main_vram[y+1][x-1] = TILE_SKY_A;
+				}
+			}
 
 			// optional: render roof tip if we are able to
 			if (x > 0 && main_vram[y-2][x-1] == 0) {
@@ -438,13 +514,13 @@ void InputThink() {
 		else if(buttons[i] & BTN_UP) {
 			if (selection_mode[i] == SELECT_MOVE && !(cursor_actioned[i] & BTN_UP)){
 				cursor_actioned[i] |= BTN_UP;
-				cursor_sprite.ypos += BuildingHeightAtLocation(cursor_sprite.xpos, cursor_sprite.ypos + 1);
+				cursor_sprite.ypos += BuildingHeightAtLocation(cursor_sprite.xpos, JUST_ABOVE(cursor_sprite.ypos));
 			}
 		}
 		else if(buttons[i] & BTN_DOWN) {
 			if (selection_mode[i] == SELECT_MOVE && !(cursor_actioned[i] & BTN_DOWN)){
 				cursor_actioned[i] |= BTN_DOWN;
-				cursor_sprite.ypos -= BuildingHeightAtLocation(cursor_sprite.xpos, cursor_sprite.ypos);
+				cursor_sprite.ypos -= BuildingHeightAtLocation(cursor_sprite.xpos, JUST_BELOW(cursor_sprite.ypos));
 			}
 		}
 		else if(buttons[i] & BTN_A) {
@@ -453,11 +529,11 @@ void InputThink() {
 
 				if (selection_mode[i] == SELECT_BUILD){
 
-					TryPlaceBuilding(i, build_selection[i], cursor_sprite.xpos, cursor_sprite.ypos + 1);
+					TryPlaceBuilding(i, build_selection[i], cursor_sprite.xpos, JUST_ABOVE(cursor_sprite.ypos));
 
 				} else if (selection_mode[i] == SELECT_MOVE){
 					
-					if (BuildingHeightAtLocation(cursor_sprite.xpos, cursor_sprite.ypos) == 0) {
+					if (BuildingHeightAtLocation(cursor_sprite.xpos, JUST_ABOVE(cursor_sprite.ypos)) == 0) {
 						selection_mode[i] = SELECT_BUILD;
 						ShowBuildMenu(i);
 					} else {
