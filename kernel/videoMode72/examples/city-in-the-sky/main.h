@@ -5,6 +5,26 @@
 #define BORDER_SIZE 2 // "no-bg" border on left and right
 #define GROUND_Y 4
 
+/* Tiles */
+#define TILE_SKY_A 0
+#define TILE_SOLID_A 1
+#define TILE_TOWER_WINDOW_A 2
+#define TILE_TOWER_ROOF_A 3
+#define TILE_TOWER_ROOFTIP_A 4
+#define TILE_FRAME_NW_A 5
+#define TILE_FRAME_NE_A 6
+#define TILE_FRAME_SW_A 7
+#define TILE_FRAME_SE_A 8
+#define TILE_OFFICE_WINDOW_A 9
+#define TILE_OFFICE_DOOR_A 10
+#define TILE_SOLID_B 11
+#define TILE_SOLID_C 12
+#define TILE_CHIMNEY_STACK_A 13
+#define TILE_CHIMNEY_STACK1_B 14
+#define TILE_CHIMNEY_STACK2_B 15
+#define TILE_CHIMNEY_STACK1_C 16
+#define TILE_CHIMNEY_STACK2_C 17
+
 /* UI */
 #define TEXT_ROW_SIZE 40
 #define TEXT_TOP_HEIGHT 11

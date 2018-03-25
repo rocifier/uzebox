@@ -1,21 +1,3 @@
-/*
- *  Uzebox video mode 72 simple demo
- *  Copyright (C) 2017 Sandor Zsuga (Jubatian)
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 #include <stdbool.h>
 #include <avr/io.h>
 #include <stdlib.h>
@@ -27,17 +9,13 @@
  *                    TODO
  **********************************************/
 /*
- * Bottom UI sprites
- * Purchase buildings
  * Horizontal scrolling
  * Cursor movement snap to buildings
  * Waves of enemies
  * Auto-firing bullets
- * Top bar text
  * Tower upgrades
  * Intro Screen
  * Music
- * Two player
  * 
  */
 
@@ -69,19 +47,18 @@ static const unsigned char cursor_sprite_data[] PROGMEM = {
  0b00001111U,0b11110000U,
 };
 
-static u8 cursor_actioned[] = { 0, 0 }; // bitmask: we can only press each direction once before we left go of all direction buttons
+static int cursor_actioned[] = { 0, 0 }; // large bitmask: we can only press each direction once before we left go of all direction buttons
 
 /* Data */
 static sprite_t cursor_sprite;
 static bullet_t main_bullets[50];
 static u8 main_vram[BG_HEIGHT][BG_WIDTH];
 static u8 main_tram[120];
-static int p1_money = 321;
-static int p2_money = 78;
 static u8 players_joined_game = 0;
 
 static u8 build_selection[] = { BUILD_TOWER, BUILD_TOWER };
 static u8 selection_mode[] = { SELECT_MOVE, SELECT_MOVE };
+static int player_money[] = { 990, 780 };
 
 /* ACII */
 static const unsigned char txt_money[] PROGMEM = "P1 $                             P2 $   ";
@@ -106,6 +83,14 @@ u8 ascii2petscii(u8 Character)
 	return Character;
 }
 
+u8 ScreenXToWorldX(u8 x) {
+	return x / 8 - BORDER_SIZE; // todo: hscroll
+}
+
+u8 ScreenYToWorldY(u8 y) {
+	return (y + (int)m72_ypos) / 8 + 11;
+}
+
 
 /***********************************************
  *                     MENUS
@@ -121,11 +106,11 @@ void RefreshPlayerMoney() {
 	}
 
 	// replace dollar values
-	itoa(p1_money, (char*)&buffer, 10);
+	itoa(player_money[0], (char*)&buffer, 10);
 	main_tram[4] = ascii2petscii(buffer[0]);
 	main_tram[5] = ascii2petscii(buffer[1]);
 	main_tram[6] = ascii2petscii(buffer[2]);
-	itoa(p2_money, (char*)&buffer, 10);
+	itoa(player_money[1], (char*)&buffer, 10);
 	main_tram[37] = ascii2petscii(buffer[0]);
 	main_tram[38] = ascii2petscii(buffer[1]);
 	main_tram[39] = ascii2petscii(buffer[2]);
@@ -213,7 +198,7 @@ void ClearDefaultBG() {
 void InitMode72() {
 
 	/* Camera at ground level */
-	m72_ypos = (GROUND_Y + BORDER_SIZE) * TILE_HEIGHT + TEXT_BOTTOM_HEIGHT;
+	m72_ypos = (GROUND_Y + 4) * TILE_HEIGHT;
 
 	/* VRAM start offsets */
 	u8 i = 0U;
@@ -259,15 +244,17 @@ void InitUI() {
 
 // Get height of whatever building is at (x,y) in pixels.
 // Returns 0 if no building is at this location.
-u8 BuildingHeightAtLocation(u8 x, u8 y) {
+u8 BuildingHeightAtLocation(u8 screen_x, u8 screen_y) {
 
-	u8 buildingAtLocation = main_vram[y / TILE_HEIGHT][x / TILE_WIDTH];
+	u8 x = ScreenXToWorldX(screen_x);
+	u8 y = ScreenYToWorldY(screen_y);
+	u8 buildingAtLocation = main_vram[y][x];
 
 	switch(buildingAtLocation) {
 		case 0: // sky
 			return 0;
 		case 1: // solid block: tower or ground
-			if (y >= GROUND_Y * TILE_HEIGHT - m72_ypos) {
+			if (y >= (BG_HEIGHT - GROUND_Y)) {
 				return 0;
 			} else {
 				return 3 * TILE_HEIGHT;
@@ -334,21 +321,102 @@ void MoveSelectionRight(u8 player) {
 	}
 }
 
+void ShowNotEnoughMoney(u8 player) {
+
+}
+
+void ShowNoSpaceForBuilding(u8 player) {
+
+}
+
+void ShowInvalidPlaceForBuilding(u8 player) {
+
+}
+
+//
+// Try to place a tower at tile position (x,y).
+// A tower might have a spacial conflict,
+// be too expensive for the player,
+// or 
+//
+void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
+
+	// First check the player has enough money
+	if (tower_type == BUILD_TOWER && player_money[player] < TOWER_COST) {
+		ShowNotEnoughMoney(player);
+		return;
+	}
+	if (tower_type == BUILD_CHIMNEY && player_money[player] < CHIMNEY_COST) {
+		ShowNotEnoughMoney(player);
+		return;
+	}
+	if (tower_type == BUILD_OFFICE && player_money[player] < OFFICE_COST) {
+		ShowNotEnoughMoney(player);
+		return;
+	}
+	if (tower_type == BUILD_FRAME && player_money[player] < FRAME_COST) {
+		ShowNotEnoughMoney(player);
+		return;
+	}
+
+	// Next check there are sky tiles where building must go
+	u8 x = ScreenXToWorldX(screen_x);
+	u8 y = ScreenYToWorldY(screen_y);
+	switch(tower_type) {
+		case BUILD_TOWER:
+			if (main_vram[y][x] > 0 || main_vram[y-1][x] > 0 || main_vram[y-2][x] > 0) {
+				ShowNoSpaceForBuilding(player);
+				return;
+			}
+			break;
+	}
+
+	// Next check if this is a valid location for the building
+	switch(tower_type) {
+		case BUILD_TOWER:
+			if ((main_vram[y+1][x] >= TILE_CHIMNEY_STACK_A && main_vram[y+1][x] <= TILE_CHIMNEY_STACK2_C) ||
+				(main_vram[y+1][x] == TILE_TOWER_ROOF_A) || (main_vram[y+1][x] == TILE_TOWER_ROOFTIP_A)) {
+				ShowInvalidPlaceForBuilding(player);
+			}
+			break;
+	}
+
+	// No errors found, so sell the building to the player!
+	switch(tower_type) {
+		case BUILD_TOWER:
+			main_vram[y-0][x] = TILE_SOLID_A;
+			main_vram[y-1][x] = TILE_TOWER_WINDOW_A;
+			main_vram[y-2][x] = TILE_TOWER_ROOF_A;
+
+			// optional: render roof tip if we are able to
+			if (x > 0 && main_vram[y-2][x-1] == 0) {
+				 main_vram[y-2][x-1] = TILE_TOWER_ROOFTIP_A;
+			}
+			
+			player_money[player] -= TOWER_COST;
+			RefreshPlayerMoney();
+			break;
+	}
+
+}
+
 void InputThink() {
 	int buttons[] = { ReadJoypad(0), ReadJoypad(1) };
 
 	// Press any button to join the game
-	if (players_joined_game & 1 == 0) {
+	if ((players_joined_game & 1) == 0) {
 		if (buttons[0] != 0) {
 			players_joined_game |= 1;
 			cursor_actioned[0] = buttons[0];
+			ShowCursorContextMenu(0);
 			return;
 		}
 	}
-	if (players_joined_game & 2 == 0) {
+	if ((players_joined_game & 2) == 0) {
 		if (buttons[1] != 0) {
 			players_joined_game |= 2;
 			cursor_actioned[1] = buttons[1];
+			ShowCursorContextMenu(1);
 			return;
 		}
 	}
@@ -370,7 +438,7 @@ void InputThink() {
 		else if(buttons[i] & BTN_UP) {
 			if (selection_mode[i] == SELECT_MOVE && !(cursor_actioned[i] & BTN_UP)){
 				cursor_actioned[i] |= BTN_UP;
-				cursor_sprite.ypos += BuildingHeightAtLocation(cursor_sprite.xpos, cursor_sprite.ypos - 1);
+				cursor_sprite.ypos += BuildingHeightAtLocation(cursor_sprite.xpos, cursor_sprite.ypos + 1);
 			}
 		}
 		else if(buttons[i] & BTN_DOWN) {
@@ -380,13 +448,22 @@ void InputThink() {
 			}
 		}
 		else if(buttons[i] & BTN_A) {
-			if (selection_mode[i] == SELECT_MOVE && !(cursor_actioned[i] & BTN_A)){
+			if (!(cursor_actioned[i] & BTN_A)) {
 				cursor_actioned[i] |= BTN_A;
-				if (BuildingHeightAtLocation(cursor_sprite.xpos, cursor_sprite.ypos) == 0) {
-					selection_mode[i] = SELECT_BUILD;
-					ShowBuildMenu(i);
-				} else {
-					// upgrade
+
+				if (selection_mode[i] == SELECT_BUILD){
+
+					TryPlaceBuilding(i, build_selection[i], cursor_sprite.xpos, cursor_sprite.ypos + 1);
+
+				} else if (selection_mode[i] == SELECT_MOVE){
+					
+					if (BuildingHeightAtLocation(cursor_sprite.xpos, cursor_sprite.ypos) == 0) {
+						selection_mode[i] = SELECT_BUILD;
+						ShowBuildMenu(i);
+					} else {
+						// upgrade
+					}
+
 				}
 			}
 		}
