@@ -106,6 +106,10 @@ u8 WorldYToScreenY(u8 y) {
 	return -TILE_HEIGHT * y + FRAME_LINES + m72_ypos + 3 * TILE_HEIGHT;
 }
 
+bool TileNotBuildable(u8 world_x, u8 world_y) {
+	return (main_vram[world_y][world_x] >= TILE_CHIMNEY_STACK_A && main_vram[world_y][world_x] <= TILE_CHIMNEY_STACK3_C) ||
+		(main_vram[world_y][world_x] == TILE_TOWER_ROOFTIP_A);
+}
 
 /***********************************************
  *                     MENUS
@@ -435,13 +439,33 @@ void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
 					return;
 			}
 			break;
+		case BUILD_CHIMNEY:
+			if ((main_vram[y][x] > 0) ||
+				 main_vram[y][x+1] > 0 ||
+				 main_vram[y-1][x+1] > 0 ||
+				 main_vram[y-1][x] > 0) {
+					ShowNoSpaceForBuilding(player);
+					return;
+			}
+			break;
 	}
 
-	// Next check if this is a valid location for the building
+	// Next check if this is a valid support location for the building
+	// TODO: building too tall
 	switch(tower_type) {
+		case BUILD_CHIMNEY:
+			if (TileNotBuildable(x, y+1)) {
+				ShowInvalidPlaceForBuilding(player);
+				return;
+			}
+			if (TileNotBuildable(x+1, y+1)) {
+				ShowInvalidPlaceForBuilding(player);
+				return;
+			}
+			break;
+
 		case BUILD_TOWER:
-			if ((main_vram[y+1][x] >= TILE_CHIMNEY_STACK_A && main_vram[y+1][x] <= TILE_CHIMNEY_STACK3_C) ||
-				(main_vram[y+1][x] == TILE_TOWER_ROOFTIP_A)) {
+			if (TileNotBuildable(x, y+1)) {
 				ShowInvalidPlaceForBuilding(player);
 				return;
 			}
@@ -451,7 +475,7 @@ void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
 	// No errors found, so sell the building to the player!
 	switch(tower_type) {
 		case BUILD_TOWER:
-			main_vram[y-0][x] = TILE_SOLID_A;
+			main_vram[y][x] = TILE_SOLID_A;
 			main_vram[y-1][x] = TILE_TOWER_WINDOW_A;
 			main_vram[y-2][x] = TILE_TOWER_ROOF_A;
 
@@ -470,9 +494,19 @@ void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
 			}
 			
 			player_money[player] -= TOWER_COST;
-			RefreshPlayerMoney();
+			break;
+
+		case BUILD_CHIMNEY:
+			main_vram[y][x] = TILE_SOLID_B;
+			main_vram[y][x+1] = TILE_SOLID_B;
+			main_vram[y-1][x] = TILE_CHIMNEY_STACK_A;
+
+			player_money[player] -= CHIMNEY_COST;
 			break;
 	}
+
+	// Make sure to display any updated deductions to the relevant player
+	RefreshPlayerMoney();
 
 }
 
