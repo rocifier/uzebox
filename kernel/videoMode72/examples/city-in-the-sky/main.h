@@ -7,6 +7,7 @@
 #define BG_HEIGHT 32
 #define BORDER_SIZE 2 // "no-bg" border on left and right
 #define GROUND_Y 4
+#define DEFAULT_GROUND_SCREEN_LEVEL (GROUND_Y + 4) * TILE_HEIGHT
 
 /* Tiles */
 #define TILE_SKY_A 0

@@ -108,7 +108,7 @@ u8 WorldYToScreenY(u8 y) {
 
 bool TileNotBuildable(u8 world_x, u8 world_y) {
 	return (main_vram[world_y][world_x] >= TILE_CHIMNEY_STACK_A && main_vram[world_y][world_x] <= TILE_CHIMNEY_STACK3_C) ||
-		(main_vram[world_y][world_x] == TILE_TOWER_ROOFTIP_A);
+		(main_vram[world_y][world_x] == TILE_TOWER_ROOFTIP_A) || main_vram[world_y][world_x] == TILE_SKY_A;
 }
 
 /***********************************************
@@ -238,7 +238,7 @@ void ClearDefaultBG() {
 void InitMode72() {
 
 	/* Camera at ground level */
-	m72_ypos = (GROUND_Y + 4) * TILE_HEIGHT;
+	m72_ypos = DEFAULT_GROUND_SCREEN_LEVEL;
 
 	/* VRAM start offsets */
 	u8 i = 0U;
@@ -347,6 +347,24 @@ u8 BuildingHeightAtLocation(u8 screen_x, u8 screen_y) {
 	
 }
 
+bool IsOpenAirTile(u8 x, u8 y) {
+	return (main_vram[y][x] == TILE_SKY_A || main_vram[y][x] == TILE_TOWER_ROOFTIP_A);
+}
+
+bool IsTopOfBuilding(u8 x, u8 y) {
+	return (y >= ScreenYToWorldY(DEFAULT_GROUND_SCREEN_LEVEL) ||
+			main_vram[y][x] == TILE_TOWER_ROOF_A ||
+			main_vram[y][x] == TILE_FRAME_NW_A ||
+			main_vram[y][x] == TILE_FRAME_NE_A ||
+			main_vram[y][x] == TILE_OFFICE_WINDOW_A ||
+			main_vram[y][x] == TILE_OFFICE_DOOR_A ||
+			main_vram[y][x] == TILE_CHIMNEY_STACK_A ||
+			main_vram[y][x] == TILE_CHIMNEY_STACK1_B ||
+			main_vram[y][x] == TILE_CHIMNEY_STACK1_C ||
+			main_vram[y][x] == TILE_CHIMNEY_STACK2_C ||
+			main_vram[y][x] == TILE_CHIMNEY_STACK3_C);
+}
+
 void MoveSelectionLeft(u8 player) {
 
 	switch(selection_mode[player]) {
@@ -356,6 +374,10 @@ void MoveSelectionLeft(u8 player) {
 				// todo: try to scroll left
 			} else {
 				cursor_sprite.xpos -= TILE_WIDTH;
+				// let cursor "fall down" until it hits a building or the ground
+				while(cursor_sprite.ypos > 0 && !IsTopOfBuilding(ScreenXToWorldX(cursor_sprite.xpos), ScreenYToWorldY(JUST_BELOW(cursor_sprite.ypos)))) {
+					cursor_sprite.ypos -= TILE_HEIGHT;
+				}
 			}
 			ShowCursorContextMenu(player);
 			break;
@@ -383,6 +405,10 @@ void MoveSelectionRight(u8 player) {
 				// todo: try to scroll right
 			} else {
 				cursor_sprite.xpos += TILE_WIDTH;
+				// let cursor "fall down" until it hits a building or the ground
+				while(cursor_sprite.ypos > 0 && !IsTopOfBuilding(ScreenXToWorldX(cursor_sprite.xpos), ScreenYToWorldY(JUST_BELOW(cursor_sprite.ypos)))) {
+					cursor_sprite.ypos -= TILE_HEIGHT;
+				}
 			}
 			ShowCursorContextMenu(player);
 			break;
@@ -432,18 +458,29 @@ void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
 
 	switch(tower_type) {
 		case BUILD_TOWER:
-			if ((main_vram[y][x] > 0 && main_vram[y][x] != TILE_TOWER_ROOF_A) ||
-				 main_vram[y-1][x] > 0 ||
-				 main_vram[y-2][x] > 0) {
+			if (!IsOpenAirTile(x, y) ||
+				!IsOpenAirTile(x, y - 1) ||
+				!IsOpenAirTile(x, y - 2)) {
 					ShowNoSpaceForBuilding(player);
 					return;
 			}
 			break;
+
+		case BUILD_FRAME:
 		case BUILD_CHIMNEY:
-			if ((main_vram[y][x] > 0) ||
-				 main_vram[y][x+1] > 0 ||
-				 main_vram[y-1][x+1] > 0 ||
-				 main_vram[y-1][x] > 0) {
+			if (!IsOpenAirTile(x, y) ||
+				!IsOpenAirTile(x + 1, y) ||
+				!IsOpenAirTile(x + 1, y - 1) ||
+				!IsOpenAirTile(x, y - 1)) {
+					ShowNoSpaceForBuilding(player);
+					return;
+			}
+			break;
+
+		case BUILD_OFFICE:
+			if (!IsOpenAirTile(x, y) ||
+				!IsOpenAirTile(x + 1, y) ||
+				!IsOpenAirTile(x + 2, y)) {
 					ShowNoSpaceForBuilding(player);
 					return;
 			}
@@ -453,12 +490,10 @@ void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
 	// Next check if this is a valid support location for the building
 	// TODO: building too tall
 	switch(tower_type) {
+
+		case BUILD_FRAME:
 		case BUILD_CHIMNEY:
-			if (TileNotBuildable(x, y+1)) {
-				ShowInvalidPlaceForBuilding(player);
-				return;
-			}
-			if (TileNotBuildable(x+1, y+1)) {
+			if (TileNotBuildable(x, y+1) || TileNotBuildable(x+1, y+1)) {
 				ShowInvalidPlaceForBuilding(player);
 				return;
 			}
@@ -466,6 +501,13 @@ void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
 
 		case BUILD_TOWER:
 			if (TileNotBuildable(x, y+1)) {
+				ShowInvalidPlaceForBuilding(player);
+				return;
+			}
+			break;
+
+		case BUILD_OFFICE:
+			if (TileNotBuildable(x, y+1) || TileNotBuildable(x+1, y+1) || TileNotBuildable(x+2, y+1)) {
 				ShowInvalidPlaceForBuilding(player);
 				return;
 			}
@@ -502,6 +544,23 @@ void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
 			main_vram[y-1][x] = TILE_CHIMNEY_STACK_A;
 
 			player_money[player] -= CHIMNEY_COST;
+			break;
+
+		case BUILD_OFFICE:
+			main_vram[y][x] = TILE_OFFICE_WINDOW_A;
+			main_vram[y][x+1] = TILE_OFFICE_WINDOW_A;
+			main_vram[y][x+2] = TILE_OFFICE_DOOR_A;
+
+			player_money[player] -= OFFICE_COST;
+			break;
+
+		case BUILD_FRAME:
+			main_vram[y][x] = TILE_FRAME_SW_A;
+			main_vram[y][x+1] = TILE_FRAME_SE_A;
+			main_vram[y-1][x] = TILE_FRAME_NW_A;
+			main_vram[y-1][x+1] = TILE_FRAME_NE_A;
+
+			player_money[player] -= FRAME_COST;
 			break;
 	}
 
