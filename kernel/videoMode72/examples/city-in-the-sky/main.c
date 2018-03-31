@@ -3,16 +3,17 @@
 #include <stdlib.h>
 #include <avr/pgmspace.h>
 #include <uzebox.h>
+#include "sprites.h"
+#include "waves.h"
 #include "main.h"
 
 /***********************************************
  *                    TODO
  **********************************************/
 /*
- * Horizontal scrolling
- * Cursor movement snap to buildings
  * Waves of enemies
  * Auto-firing bullets
+ * Y scrollig? and tower height limits
  * Tower upgrades
  * Intro Screen
  * Music
@@ -25,44 +26,28 @@
  *                    DATA
  **********************************************/
 
-
-/* Sprite images (2bpp) */
-static const unsigned char cursor_sprite_data[] PROGMEM = {
-
- 0b00000011U,0b11000000U,
- 0b00000011U,0b11000000U,
- 0b00001100U,0b00110000U,
- 0b00001100U,0b00110000U,
- 0b00110000U,0b00001100U,
- 0b00110000U,0b00001100U,
- 0b11000000U,0b00000011U,
- 0b11111100U,0b00111111U,
- 0b00001100U,0b00110000U,
- 0b00001100U,0b00110000U,
- 0b00001100U,0b00110000U,
- 0b00001100U,0b00110000U,
- 0b00001100U,0b00110000U,
- 0b00001100U,0b00110000U,
- 0b00001100U,0b00110000U,
- 0b00001111U,0b11110000U,
-};
-static const unsigned char debug_sprite_data[] PROGMEM = {
- 0b11111111U,0b11111111U
-};
-
 static int cursor_actioned[] = { 0, 0 }; // large bitmask: we can only press each direction once before we left go of all direction buttons
 
 /* Data */
 static sprite_t cursor_sprite;
 static sprite_t debug_sprite;
+static enemy_t enemy[MAX_ENEMY_COUNT];
 static bullet_t main_bullets[50];
 static u8 main_vram[BG_HEIGHT][BG_WIDTH];
 static u8 main_tram[120];
 static u8 players_joined_game = 0;
+static u16 x_offset = 0;
+static bool is_scrolling = false;
+static bool scroll_direction_is_left = false;
 
 static u8 build_selection[] = { BUILD_TOWER, BUILD_TOWER };
 static u8 selection_mode[] = { SELECT_MOVE, SELECT_MOVE };
 static int player_money[] = { 990, 780 };
+
+static u8 current_wave = 0;
+static u8 wave_countdown = 60; // 240 = 8 seconds between each wave
+static u8 spawn_countdown = 60; // 60 = 2 seconds between each enemy
+static u8 wave_enemies_spawned = 0; // number of enemies that have spawned this wave
 
 /* ACII */
 static const unsigned char txt_money[] PROGMEM = "P1 $                             P2 $   ";
@@ -91,11 +76,11 @@ u8 ascii2petscii(u8 Character)
 }
 
 u8 WorldXToScreenX(u8 x) {
-	return (x + BORDER_SIZE) * 8; // todo: hscroll
+	return (x + BORDER_SIZE) * TILE_WIDTH - x_offset;
 }
 
 u8 ScreenXToWorldX(u8 x) {
-	return x / 8 - BORDER_SIZE; // todo: hscroll
+	return (x + x_offset) / TILE_WIDTH - BORDER_SIZE;
 }
 
 u8 ScreenYToWorldY(u8 y) {
@@ -222,6 +207,18 @@ void ShowInvalidPlaceForBuilding(u8 player) {
  *                INITIALISATION
  **********************************************/
 
+void InitEnemies() {
+	for (u8 i = 0; i < MAX_ENEMY_COUNT; i++) {
+		enemy[i].type = 0;
+		enemy[i].health = 0;
+		enemy[i].sprite.height = 0;
+		enemy[i].sprite.off = 0;
+		enemy[i].sprite.xpos = 0;
+		enemy[i].sprite.ypos = 0;
+		enemy[i].sprite.next = 0;
+	}
+}
+
 void ClearDefaultBG() {
 	for (u8 y = 0; y < BG_HEIGHT - GROUND_Y; y++) {
 		for (u8 x = 0; x < BG_WIDTH; x++) {
@@ -274,7 +271,7 @@ void InitUI() {
 	cursor_sprite.col1   = 0x13U;
 	cursor_sprite.col2   = 0x47U;
 	cursor_sprite.col3   = 0x7FU;
-	sprites[SPRITE_INDEX_CURSOR] = &cursor_sprite;
+	sprites[SPRITE_INDEX_UI] = &cursor_sprite;
 
 	debug_sprite.xpos   = TILE_WIDTH * 7;
 	debug_sprite.ypos   = 96;
@@ -371,7 +368,11 @@ void MoveSelectionLeft(u8 player) {
 
 		case SELECT_MOVE:
 			if (cursor_sprite.xpos == TILE_WIDTH * 2) {
-				// todo: try to scroll left
+				if (!is_scrolling && x_offset >= TILE_WIDTH) {
+					is_scrolling = true;
+					scroll_direction_is_left = true;
+				}
+
 			} else {
 				cursor_sprite.xpos -= TILE_WIDTH;
 				// let cursor "fall down" until it hits a building or the ground
@@ -402,7 +403,11 @@ void MoveSelectionRight(u8 player) {
 
 		case SELECT_MOVE:
 			if (cursor_sprite.xpos == TILE_WIDTH * SCREEN_TILES_H) {
-				// todo: try to scroll right
+				if (!is_scrolling && x_offset < (BG_WIDTH - SCREEN_TILES_H - 1) * TILE_WIDTH) {
+					is_scrolling = true;
+					scroll_direction_is_left = false;
+				}
+
 			} else {
 				cursor_sprite.xpos += TILE_WIDTH;
 				// let cursor "fall down" until it hits a building or the ground
@@ -498,7 +503,7 @@ void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
 				return;
 			}
 			break;
-
+ 
 		case BUILD_TOWER:
 			if (TileNotBuildable(x, y+1)) {
 				ShowInvalidPlaceForBuilding(player);
@@ -567,6 +572,102 @@ void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
 	// Make sure to display any updated deductions to the relevant player
 	RefreshPlayerMoney();
 
+}
+
+void SpawnEnemy() {
+	u8 index_to_spawn = 0;
+	u8 enemy_counter = 0;
+	u8 enemies_this_wave = pgm_read_byte(&waves[current_wave][0]);
+
+	// have we already spawned all the enemies this wave?
+	if(wave_enemies_spawned >= enemies_this_wave) {
+		return;
+	}
+
+	// determine next enemy type to spawn
+	for (u8 i = 1; i < 15; i++) {
+
+		u8 this_enemy_count = pgm_read_byte(&waves[current_wave][i]);
+		enemy_counter += this_enemy_count;
+
+		if (wave_enemies_spawned < enemy_counter) {
+			index_to_spawn = i;
+			break;
+		}
+	}
+
+	switch(index_to_spawn) {
+		case 0: // Shouldn't happen, this means no enemies were coded to spawn this wave in waves.h
+			return;
+
+		case 1: //	Enemy walker 1
+			enemy[wave_enemies_spawned].health = 5;
+			enemy[wave_enemies_spawned].speed_lag = 5;
+			enemy[wave_enemies_spawned].anim_lag = 8;
+			enemy[wave_enemies_spawned].sprite.xpos   = 0;
+			enemy[wave_enemies_spawned].sprite.ypos   = m72_ypos + TILE_HEIGHT;
+			enemy[wave_enemies_spawned].sprite.off    = ((u16)&walker01_sprite_anim_data) & SPRITE_UNMIRRORED;
+			enemy[wave_enemies_spawned].original_off  = enemy[wave_enemies_spawned].sprite.off;
+			enemy[wave_enemies_spawned].sprite.height = 8U;
+			enemy[wave_enemies_spawned].sprite.col1   = 0x13U;
+			enemy[wave_enemies_spawned].sprite.col2   = 0x47U;
+			enemy[wave_enemies_spawned].sprite.col3   = 0x7FU;
+			enemy[wave_enemies_spawned].anim_frame_count = 2;
+			sprites[SPRITE_INDEX_ENEMIES + (wave_enemies_spawned >> 3)] = &enemy[index_to_spawn - 1].sprite;
+			wave_enemies_spawned++;
+			break;
+
+	}
+
+	// Set our sprite metadata so we can easily tell what type of enemy a sprite is
+	enemy[wave_enemies_spawned - 1].type = index_to_spawn;
+
+	//	Enemy walker 2,
+	//	Enemy walker 3,
+	//	Enemy walker boss 1,
+	//	Enemy walker boss 2,
+	//	Enemy flyer 1,	
+	//	Enemy flyer 2,
+	//	Enemy flyer 3,
+	//	Enemy flyer 4,
+	//	Enemy flyer 5,
+	//	Enemy flyer 6,	
+	//	Enemy flyer boss 1,
+	//	Enemy flyer boss 2,
+	//	Enemy flyer boss 3
+
+}
+
+void WaveThink() {
+	spawn_countdown--;
+	if (spawn_countdown == 0) {
+		SpawnEnemy();
+		spawn_countdown = 60; // 2 seconds
+	}
+
+	player_money[1] = wave_enemies_spawned;
+	RefreshPlayerMoney();
+
+	for (u8 i = 0; i < wave_enemies_spawned; i++) {
+		if (enemy[i].health > 0) {
+			enemy[i].speed_lag_count++;
+			if (enemy[i].speed_lag_count == enemy[i].speed_lag) {
+				enemy[i].sprite.xpos++;
+				enemy[i].speed_lag_count = 0;
+			}
+			if (enemy[i].anim_frame_count > 1) {
+				enemy[i].anim_lag_count++;
+				if (enemy[i].anim_lag_count == enemy[i].anim_lag) {
+					enemy[i].anim_frame++;
+					if (enemy[i].anim_frame >= enemy[i].anim_frame_count) {
+						enemy[i].anim_frame = 0;
+					}
+					enemy[i].sprite.off = enemy[i].original_off + (enemy[i].anim_frame * 2 * enemy[i].sprite.height);
+					enemy[i].anim_lag_count = 0;
+				}
+			}
+		}
+	}
 }
 
 void InputThink() {
@@ -650,6 +751,22 @@ void InputThink() {
 
 }
 
+void ScrollThink() {
+	if (is_scrolling) {
+		if (scroll_direction_is_left) {
+			x_offset -= 2;
+		} else {
+			x_offset += 2;
+		}
+		if (x_offset % TILE_WIDTH == 0) {
+			is_scrolling = false;
+		}
+	}
+	for (u8 i = 0; i < BG_HEIGHT; i++) {
+		m72_rowoff[i] = (u16)&main_vram[i][(x_offset >> 3)] + ((x_offset & 7) << 12);
+	}
+}
+
 /***********************************************
  *                 ENTRY POINT
  **********************************************/
@@ -658,10 +775,17 @@ int main(void){
 
 	InitMode72();
 	InitUI();
+	InitEnemies();
 	ClearDefaultBG();
 
 	while(true){
 		InputThink();
+
+		if (players_joined_game) {
+			WaveThink();
+			ScrollThink();
+		}
+
 		WaitVsync(1);
 	}
 

@@ -1,9 +1,10 @@
 
 #define JUST_ABOVE(Y) (Y) + 5
 #define JUST_BELOW(Y) (Y) - 1
+#define ENEMY_IS_ALIVE(I) enemy_sprite[I].height > 0
 
 /* Background */
-#define BG_WIDTH 48
+#define BG_WIDTH 32
 #define BG_HEIGHT 32
 #define BORDER_SIZE 2 // "no-bg" border on left and right
 #define GROUND_Y 4
@@ -35,7 +36,8 @@
 #define TEXT_BOTTOM_HEIGHT 18
 #define SPRITE_UNMIRRORED 0x7FFFU
 #define SPRITE_MIRRORED 0xFFFFU
-#define SPRITE_INDEX_CURSOR 1
+#define SPRITE_INDEX_UI 1
+#define SPRITE_INDEX_ENEMIES 2
 
 #define BUILD_TOWER 0
 #define BUILD_CHIMNEY 1
@@ -51,3 +53,19 @@
 #define CHIMNEY_COST 170
 #define OFFICE_COST 230
 #define FRAME_COST 300
+
+/* Enemies */
+#define MAX_ENEMY_COUNT 40
+
+typedef struct {
+    int health;
+    u8 type;
+    sprite_t sprite;
+    u16 original_off;
+    u8 speed_lag;
+    u8 speed_lag_count;
+    u8 anim_lag;
+    u8 anim_lag_count;
+    u8 anim_frame;
+    u8 anim_frame_count;
+} enemy_t;
