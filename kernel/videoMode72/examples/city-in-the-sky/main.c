@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <avr/pgmspace.h>
 #include <uzebox.h>
+#include <videoMode72.h>
 #include "sprites.h"
+#include "enemies.h"
 #include "waves.h"
 #include "main.h"
 
@@ -31,8 +33,7 @@ static int cursor_actioned[] = { 0, 0 }; // large bitmask: we can only press eac
 /* Data */
 static sprite_t cursor_sprite;
 static sprite_t debug_sprite;
-static enemy_t enemy[MAX_ENEMY_COUNT];
-static bullet_t main_bullets[50];
+static bullet_t main_bullets[MAX_BULLET_COUNT];
 static u8 main_vram[BG_HEIGHT][BG_WIDTH];
 static u8 main_tram[120];
 static u8 players_joined_game = 0;
@@ -42,15 +43,19 @@ static bool scroll_direction_is_left = false;
 
 static u8 build_selection[] = { BUILD_TOWER, BUILD_TOWER };
 static u8 selection_mode[] = { SELECT_MOVE, SELECT_MOVE };
-static int player_money[] = { 990, 780 };
+static int player_money[] = { 0, 0 };
 
 static u8 current_wave = 0;
-static u8 wave_countdown = 60; // 240 = 8 seconds between each wave
-static u8 spawn_countdown = 60; // 60 = 2 seconds between each enemy
+static u8 wave_countdown = 0; // 240 = 8 seconds between each wave
+static u8 spawn_countdown = 0; // 60 = 2 seconds between each enemy
 static u8 wave_enemies_spawned = 0; // number of enemies that have spawned this wave
+static u8 lives = 0;
 
 /* ACII */
-static const unsigned char txt_money[] PROGMEM = "P1 $                             P2 $   ";
+static const unsigned char txt_money[] PROGMEM = "P1 $            LIVES:           P2 $   ";
+static const unsigned char txt_gameo[] PROGMEM = "                GAME OVER               ";
+static const unsigned char txt_waves[] PROGMEM = "                 WAVE                   ";
+static const unsigned char txt_wonit[] PROGMEM = "CONGRATULATIONS YOU HAVE BEATEN THE GAME";
 static const unsigned char txt_build[] PROGMEM = "P1+  TOWER  CHIMNEY  OFFICE  FRAME  $   P2+  TOWER  CHIMNEY  OFFICE  FRAME  $   ";
 static const unsigned char txt_upgrd[] PROGMEM = "P1+  TOWER  CHIMNEY  OFFICE  FRAME  $   P2+  TOWER  CHIMNEY  OFFICE  FRAME  $   ";
 static const unsigned char txt_start[] PROGMEM = "    P1 PRESS ANY BUTTON TO JOIN GAME        P2 PRESS ANY BUTTON TO JOIN GAME    ";
@@ -99,7 +104,7 @@ bool TileNotBuildable(u8 world_x, u8 world_y) {
 /***********************************************
  *                     MENUS
  **********************************************/
-void RefreshPlayerMoney() {
+void RefreshTopBar() {
 
 	char buffer[5] = "    ";
 
@@ -118,6 +123,11 @@ void RefreshPlayerMoney() {
 	main_tram[37] = ascii2petscii(buffer[0]);
 	main_tram[38] = ascii2petscii(buffer[1]);
 	main_tram[39] = ascii2petscii(buffer[2]);
+
+	// replace lives
+	itoa(lives, (char*)&buffer, 10);
+	main_tram[22] = ascii2petscii(buffer[0]);
+	main_tram[23] = ascii2petscii(buffer[1]);
 
 }
 
@@ -175,10 +185,16 @@ void ShowBuildMenu(u8 player) {
 }
 
 void ShowCursorContextMenu(u8 player) {
-	// show blank text
+	// show wave number
 	for (u8 i = TEXT_ROW_SIZE * player; i < TEXT_ROW_SIZE + TEXT_ROW_SIZE * player; i++){
-		main_tram[i + TEXT_ROW_SIZE] = ascii2petscii(' ');
+		u8 ascii = pgm_read_byte(&(txt_waves[i]));
+		main_tram[i + TEXT_ROW_SIZE] = ascii2petscii(ascii);
 	}
+	char buffer[] = "    ";
+	itoa((int)current_wave + 1, (char*)&buffer, 10);
+	main_tram[22 + TEXT_ROW_SIZE * player + TEXT_ROW_SIZE] = ascii2petscii(buffer[0]);
+	main_tram[23 + TEXT_ROW_SIZE * player + TEXT_ROW_SIZE] = ascii2petscii(buffer[1]);
+
 }
 
 void ShowNotEnoughMoney(u8 player) {
@@ -215,8 +231,10 @@ void InitEnemies() {
 		enemy[i].sprite.off = 0;
 		enemy[i].sprite.xpos = 0;
 		enemy[i].sprite.ypos = 0;
-		enemy[i].sprite.next = 0;
+		enemy[i].sprite.next = &enemy[i + 1].sprite;
 	}
+	enemy[MAX_ENEMY_COUNT - 1].sprite.next = NULL;
+	sprites[SPRITE_INDEX_ENEMIES] = &enemy[0].sprite;
 }
 
 void ClearDefaultBG() {
@@ -242,11 +260,6 @@ void InitMode72() {
 	for (i = 0U; i < BG_HEIGHT; i++){
 		m72_rowoff[i] = (u16)(&main_vram[i][0]);
 	}
-
-	/* Text mode VRAM contents */
-	RefreshPlayerMoney();
-	ShowPressAKeyToJoin(0);
-	ShowPressAKeyToJoin(1);
 
 	/* Configure mode */
 	m72_tt_hgt = TEXT_TOP_HEIGHT;
@@ -282,6 +295,30 @@ void InitUI() {
 	debug_sprite.col3   = 0x70U;
 	sprites[0] = &debug_sprite;
 
+}
+
+void ResetGame() {
+	x_offset = 0;
+	is_scrolling = false;
+
+	player_money[0] = 990;
+	player_money[1] = 780;
+	lives = 15;
+	RefreshTopBar();
+
+	current_wave = 0;
+	wave_countdown = TIME_BETWEEN_WAVES; // 240 = 8 seconds between each wave
+	spawn_countdown = TIME_BETWEEN_ENEMIES; // 60 = 2 seconds between each enemy
+	wave_enemies_spawned = 0; // number of enemies that have spawned this wave
+
+	players_joined_game = 0;
+	ShowPressAKeyToJoin(0);
+	ShowPressAKeyToJoin(1);
+
+	for (u8 i = 0; i < MAX_BULLET_COUNT; i++) {
+		main_bullets[i].height = 0;
+	}
+	bullets[0] = &main_bullets[0];
 }
 
 /***********************************************
@@ -570,8 +607,32 @@ void TryPlaceBuilding(u8 player, u8 tower_type, u8 screen_x, u8 screen_y) {
 	}
 
 	// Make sure to display any updated deductions to the relevant player
-	RefreshPlayerMoney();
+	RefreshTopBar();
 
+}
+
+
+
+void GameOverCheck() {
+
+	if (lives == 0) {
+		ResetGame();
+
+		// display game over message in place of money
+		for (u8 i = 0; i < TEXT_ROW_SIZE; i++){
+			u8 ascii = pgm_read_byte(&(txt_gameo[i]));
+			main_tram[i] = ascii2petscii(ascii);
+		}
+
+	} else if (current_wave == LEN(waves)) {
+		ResetGame();
+
+		// display you win message in place of money
+		for (u8 i = 0; i < TEXT_ROW_SIZE; i++){
+			u8 ascii = pgm_read_byte(&(txt_wonit[i]));
+			main_tram[i] = ascii2petscii(ascii);
+		}
+	}
 }
 
 void SpawnEnemy() {
@@ -595,32 +656,39 @@ void SpawnEnemy() {
 			break;
 		}
 	}
+	if (index_to_spawn == 0) {
+		return; // shouldn't happen, this would indicate no enemies defined this wave
+	}
+
+	// determine a free enemy slot to regenerate
+	u8 new_enemy_index = 255;
+	for (u8 i = 0; i < MAX_ENEMY_COUNT; i++) {
+		if (enemy[i].health == 0) {
+			new_enemy_index = i;
+			break;
+		}
+	}
+	if (new_enemy_index == 255) {
+		return; // shouldn't happen, no enemy slots available
+	}
 
 	switch(index_to_spawn) {
-		case 0: // Shouldn't happen, this means no enemies were coded to spawn this wave in waves.h
-			return;
-
 		case 1: //	Enemy walker 1
-			enemy[wave_enemies_spawned].health = 5;
-			enemy[wave_enemies_spawned].speed_lag = 5;
-			enemy[wave_enemies_spawned].anim_lag = 8;
-			enemy[wave_enemies_spawned].sprite.xpos   = 0;
-			enemy[wave_enemies_spawned].sprite.ypos   = m72_ypos + TILE_HEIGHT;
-			enemy[wave_enemies_spawned].sprite.off    = ((u16)&walker01_sprite_anim_data) & SPRITE_UNMIRRORED;
-			enemy[wave_enemies_spawned].original_off  = enemy[wave_enemies_spawned].sprite.off;
-			enemy[wave_enemies_spawned].sprite.height = 8U;
-			enemy[wave_enemies_spawned].sprite.col1   = 0x13U;
-			enemy[wave_enemies_spawned].sprite.col2   = 0x47U;
-			enemy[wave_enemies_spawned].sprite.col3   = 0x7FU;
-			enemy[wave_enemies_spawned].anim_frame_count = 2;
-			sprites[SPRITE_INDEX_ENEMIES + (wave_enemies_spawned >> 3)] = &enemy[index_to_spawn - 1].sprite;
-			wave_enemies_spawned++;
+			enemy[new_enemy_index].health = 5;
+			enemy[new_enemy_index].speed_lag = 5;
+			enemy[new_enemy_index].anim_lag = 8;
+			enemy[new_enemy_index].x = 0;
+			enemy[new_enemy_index].y = m72_ypos + TILE_HEIGHT; // ground level
+			enemy[new_enemy_index].sprite.off    = ((u16)&walker01_sprite_anim_data) & SPRITE_UNMIRRORED;
+			enemy[new_enemy_index].original_off  = enemy[new_enemy_index].sprite.off;
+			enemy[new_enemy_index].sprite.height = 8U;
+			enemy[new_enemy_index].sprite.col1   = 0x13U;
+			enemy[new_enemy_index].sprite.col2   = 0x47U;
+			enemy[new_enemy_index].sprite.col3   = 0x7FU;
+			enemy[new_enemy_index].anim_frame_count = 2;
 			break;
 
 	}
-
-	// Set our sprite metadata so we can easily tell what type of enemy a sprite is
-	enemy[wave_enemies_spawned - 1].type = index_to_spawn;
 
 	//	Enemy walker 2,
 	//	Enemy walker 3,
@@ -636,25 +704,77 @@ void SpawnEnemy() {
 	//	Enemy flyer boss 2,
 	//	Enemy flyer boss 3
 
+	// Set our sprite metadata so we can easily tell what type of enemy a sprite is
+	enemy[new_enemy_index].type = index_to_spawn;
+	wave_enemies_spawned++;
+
+}
+
+void DestroyEnemy(u8 enemy_index) {
+	enemy[enemy_index].health = 0;
+	enemy[enemy_index].sprite.height = 0;
+	enemy[enemy_index].x = 0;
+
+	// check if all enemies have been destroyed
+	bool all_dead = true;
+	for(u8 i = 0; i < MAX_ENEMY_COUNT; i++) {
+		if (enemy[i].health > 0) {
+			all_dead = false;
+			break;
+		}
+	}
+	if (all_dead) {
+		u8 enemies_this_wave = pgm_read_byte(&waves[current_wave][0]);
+
+		if (wave_enemies_spawned == enemies_this_wave) {
+			current_wave++;
+			wave_countdown = TIME_BETWEEN_WAVES;
+			spawn_countdown = TIME_BETWEEN_ENEMIES;
+			wave_enemies_spawned = 0;
+
+			// display current wave
+			if (selection_mode[0] == SELECT_MOVE && (players_joined_game & 1)) {
+				ShowCursorContextMenu(0);
+			}
+			if (selection_mode[1] == SELECT_MOVE && (players_joined_game & 2)) {
+				ShowCursorContextMenu(1);
+			}
+
+			GameOverCheck();
+		}
+	}
 }
 
 void WaveThink() {
-	spawn_countdown--;
-	if (spawn_countdown == 0) {
-		SpawnEnemy();
-		spawn_countdown = 60; // 2 seconds
+	if (wave_countdown == 0) { // wave counter is reset after last enemy is destroyed this wave
+		spawn_countdown--;
+		if (spawn_countdown == 0) {
+			SpawnEnemy();
+			spawn_countdown = TIME_BETWEEN_ENEMIES;
+		}
+	} else {
+		wave_countdown--;
 	}
 
-	player_money[1] = wave_enemies_spawned;
-	RefreshPlayerMoney();
-
-	for (u8 i = 0; i < wave_enemies_spawned; i++) {
+	for (u8 i = 0; i < MAX_ENEMY_COUNT; i++) {
 		if (enemy[i].health > 0) {
+
+			// velocity
 			enemy[i].speed_lag_count++;
 			if (enemy[i].speed_lag_count == enemy[i].speed_lag) {
-				enemy[i].sprite.xpos++;
+				enemy[i].x++;
 				enemy[i].speed_lag_count = 0;
 			}
+
+			// goal check
+			if (enemy[i].x >= (BG_WIDTH - 1) * TILE_WIDTH) {
+				DestroyEnemy(i);
+				lives--;
+				RefreshTopBar();
+				break;
+			}
+
+			// animation
 			if (enemy[i].anim_frame_count > 1) {
 				enemy[i].anim_lag_count++;
 				if (enemy[i].anim_lag_count == enemy[i].anim_lag) {
@@ -666,6 +786,10 @@ void WaveThink() {
 					enemy[i].anim_lag_count = 0;
 				}
 			}
+
+			// update sprite screen position
+			enemy[i].sprite.xpos = enemy[i].x - x_offset;
+			enemy[i].sprite.ypos = enemy[i].y; // todo: incorporate y scrolling
 		}
 	}
 }
@@ -773,6 +897,7 @@ void ScrollThink() {
 
 int main(void){
 
+	ResetGame();
 	InitMode72();
 	InitUI();
 	InitEnemies();

@@ -53,10 +53,12 @@ HEX_FLASH_FLAGS = -R .eeprom
 OBJECTS  = $(OBJDIR)/uzeboxVideoEngineCore.o $(OBJDIR)/uzeboxCore.o $(OBJDIR)/uzeboxSoundEngine.o $(OBJDIR)/uzeboxSoundEngineCore.o $(OBJDIR)/uzeboxVideoEngine.o
 OBJECTS += $(OBJDIR)/charrom.o
 OBJECTS += $(OBJDIR)/tileset.o
+OBJECTS += $(OBJDIR)/enemies.o
 OBJECTS += $(OBJDIR)/$(GAME).o
 
 ## Include Directories
 INCLUDES = -I"$(KERNEL_DIR)"
+INCLUDES += -I"../../"
 
 ## Build
 all: $(OUTDIR)/$(TARGET) $(OUTDIR)/$(GAME).hex $(OUTDIR)/$(GAME).lss $(OUTDIR)/$(GAME).uze size
@@ -91,6 +93,9 @@ $(OBJDIR)/uzeboxVideoEngine.o: $(KERNEL_DIR)/uzeboxVideoEngine.c $(DIRS)
 $(OBJDIR)/$(GAME).o: main.c $(DIRS)
 	$(CC) $(INCLUDES) $(CFLAGS) -c $< -o $@
 
+$(OBJDIR)/enemies.o: enemies.c $(DIRS)
+	$(CC) $(INCLUDES) $(CFLAGS) -c $< -o $@
+
 $(OBJDIR)/charrom.o: charrom.s $(DIRS)
 	$(CC) $(INCLUDES) $(ASMFLAGS) -c $< -o $@
 
@@ -99,7 +104,7 @@ $(OBJDIR)/tileset.o: tileset.s $(DIRS)
 
 ##Link
 $(OUTDIR)/$(TARGET): $(OBJECTS) $(DIRS)
-	 $(CC) $(LDFLAGS) $(OBJECTS) $(LIBDIRS) $(LIBS) -o $(OUTDIR)/$(TARGET)
+	 $(CC) $(LDFLAGS) $(OBJECTS) $(LIBDIRS) $(LIBS) -o $@
 
 $(OUTDIR)/%.hex: $(OUTDIR)/$(TARGET)
 	avr-objcopy -O ihex $(HEX_FLASH_FLAGS) $< $@

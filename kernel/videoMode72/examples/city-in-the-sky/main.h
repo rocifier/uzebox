@@ -2,6 +2,7 @@
 #define JUST_ABOVE(Y) (Y) + 5
 #define JUST_BELOW(Y) (Y) - 1
 #define ENEMY_IS_ALIVE(I) enemy_sprite[I].height > 0
+#define LEN(arr) ((int) (sizeof (arr) / sizeof (arr)[0]))
 
 /* Background */
 #define BG_WIDTH 32
@@ -55,17 +56,6 @@
 #define FRAME_COST 300
 
 /* Enemies */
-#define MAX_ENEMY_COUNT 40
-
-typedef struct {
-    int health;
-    u8 type;
-    sprite_t sprite;
-    u16 original_off;
-    u8 speed_lag;
-    u8 speed_lag_count;
-    u8 anim_lag;
-    u8 anim_lag_count;
-    u8 anim_frame;
-    u8 anim_frame_count;
-} enemy_t;
+#define TIME_BETWEEN_WAVES 155
+#define TIME_BETWEEN_ENEMIES 150
+#define MAX_BULLET_COUNT 64

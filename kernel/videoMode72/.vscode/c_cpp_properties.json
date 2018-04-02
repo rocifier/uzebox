@@ -1,0 +1,32 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}",
+                "${workspaceFolder}/../",
+                "C:/WinAVR-20100110/lib/gcc/avr32/4.3.2/include",
+                "C:/WinAVR-20100110/avr/include"
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "${workspaceFolder}",
+                    "${workspaceFolder}/../",
+                    "C:/WinAVR-20100110/lib/gcc/avr32/4.3.2/include",
+                    "C:/WinAVR-20100110/avr/include"
+                ]
+            },
+            "cStandard": "c99",
+            "intelliSenseMode": "clang-x64",
+            "cppStandard": "c++17",
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "__GNUC__=6",
+                "__cdecl=__attribute__((__progmem__))"
+            ]
+        }
+    ],
+    "version": 3
+}

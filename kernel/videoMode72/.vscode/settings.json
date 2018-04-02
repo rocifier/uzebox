@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "stdbool.h": "c",
+        "uzebox.h": "c",
+        "io.h": "c",
+        "stdlib.h": "c"
+    }
+}
