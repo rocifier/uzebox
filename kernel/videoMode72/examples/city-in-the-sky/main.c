@@ -4,10 +4,10 @@
 #include <avr/pgmspace.h>
 #include <uzebox.h>
 #include <videoMode72.h>
+#include "globals.h"
 #include "sprites.h"
 #include "enemies.h"
 #include "waves.h"
-#include "main.h"
 
 /***********************************************
  *                    TODO
@@ -28,30 +28,28 @@
  *                    DATA
  **********************************************/
 
-static int cursor_actioned[] = { 0, 0 }; // large bitmask: we can only press each direction once before we left go of all direction buttons
+int cursor_actioned[] = { 0, 0 }; // large bitmask: we can only press each direction once before we left go of all direction buttons
 
-/* Data */
-static sprite_t cursor_sprite;
-static sprite_t debug_sprite;
-static bullet_t main_bullets[MAX_BULLET_COUNT];
-static u8 main_vram[BG_HEIGHT][BG_WIDTH];
-static u8 main_tram[120];
-static u8 players_joined_game = 0;
-static u16 x_offset = 0;
-static bool is_scrolling = false;
-static bool scroll_direction_is_left = false;
+sprite_t cursor_sprite;
+sprite_t debug_sprite;
+bullet_t main_bullets[MAX_BULLET_COUNT];
+u8 main_vram[BG_HEIGHT][BG_WIDTH];
+u8 main_tram[120];
+u8 players_joined_game = 0;
+u16 x_offset = 0;
+bool is_scrolling = false;
+bool scroll_direction_is_left = false;
 
-static u8 build_selection[] = { BUILD_TOWER, BUILD_TOWER };
-static u8 selection_mode[] = { SELECT_MOVE, SELECT_MOVE };
-static int player_money[] = { 0, 0 };
+u8 build_selection[] = { BUILD_TOWER, BUILD_TOWER };
+u8 selection_mode[] = { SELECT_MOVE, SELECT_MOVE };
+int player_money[] = { 0, 0 };
 
-static u8 current_wave = 0;
-static u8 wave_countdown = 0; // 240 = 8 seconds between each wave
-static u8 spawn_countdown = 0; // 60 = 2 seconds between each enemy
-static u8 wave_enemies_spawned = 0; // number of enemies that have spawned this wave
-static u8 lives = 0;
+u8 current_wave = 0;
+u8 wave_countdown = 0; // 240 = 8 seconds between each wave
+u8 spawn_countdown = 0; // 60 = 2 seconds between each enemy
+u8 wave_enemies_spawned = 0; // number of enemies that have spawned this wave
+u8 lives = 0;
 
-/* ACII */
 static const unsigned char txt_money[] PROGMEM = "P1 $            LIVES:           P2 $   ";
 static const unsigned char txt_gameo[] PROGMEM = "                GAME OVER               ";
 static const unsigned char txt_waves[] PROGMEM = "                 WAVE                   ";
@@ -223,27 +221,13 @@ void ShowInvalidPlaceForBuilding(u8 player) {
  *                INITIALISATION
  **********************************************/
 
-void InitEnemies() {
-	for (u8 i = 0; i < MAX_ENEMY_COUNT; i++) {
-		enemy[i].type = 0;
-		enemy[i].health = 0;
-		enemy[i].sprite.height = 0;
-		enemy[i].sprite.off = 0;
-		enemy[i].sprite.xpos = 0;
-		enemy[i].sprite.ypos = 0;
-		enemy[i].sprite.next = &enemy[i + 1].sprite;
-	}
-	enemy[MAX_ENEMY_COUNT - 1].sprite.next = NULL;
-	sprites[SPRITE_INDEX_ENEMIES] = &enemy[0].sprite;
-}
-
 void ClearDefaultBG() {
-	for (u8 y = 0; y < BG_HEIGHT - GROUND_Y; y++) {
+	for (u8 y = 0; y < GROUND_Y; y++) {
 		for (u8 x = 0; x < BG_WIDTH; x++) {
 			main_vram[y][x] = 0U;
 		}
 	}
-	for (u8 y = BG_HEIGHT - GROUND_Y; y < BG_HEIGHT; y++) {
+	for (u8 y = GROUND_Y; y < BG_HEIGHT; y++) {
 		for (u8 x = 0; x < BG_WIDTH; x++) {
 			main_vram[y][x] = 1U;
 		}
@@ -253,7 +237,7 @@ void ClearDefaultBG() {
 void InitMode72() {
 
 	/* Camera at ground level */
-	m72_ypos = DEFAULT_GROUND_SCREEN_LEVEL;
+	m72_ypos = 0;
 
 	/* VRAM start offsets */
 	u8 i = 0U;
@@ -278,7 +262,7 @@ void InitMode72() {
 void InitUI() {
 
 	cursor_sprite.xpos   = TILE_WIDTH * 11;
-	cursor_sprite.ypos   = m72_ypos;
+	cursor_sprite.ypos   = WorldYToScreenY(GROUND_Y);
 	cursor_sprite.off    = ((u16)&cursor_sprite_data) & SPRITE_UNMIRRORED;
 	cursor_sprite.height = 16U;
 	cursor_sprite.col1   = 0x13U;
@@ -287,9 +271,9 @@ void InitUI() {
 	sprites[SPRITE_INDEX_UI] = &cursor_sprite;
 
 	debug_sprite.xpos   = TILE_WIDTH * 7;
-	debug_sprite.ypos   = 96;
+	debug_sprite.ypos   = WorldYToScreenY(GROUND_Y - 1);
 	debug_sprite.off    = ((u16)&debug_sprite_data) & SPRITE_UNMIRRORED;
-	debug_sprite.height = 1U;
+	debug_sprite.height = 1;
 	debug_sprite.col1   = 0x10U;
 	debug_sprite.col2   = 0x40U;
 	debug_sprite.col3   = 0x70U;
@@ -337,7 +321,7 @@ u8 BuildingHeightAtLocation(u8 screen_x, u8 screen_y) {
 		case TILE_SKY_A:
 			return 0;
 		case TILE_SOLID_A:
-			if (y >= (BG_HEIGHT - GROUND_Y)) {
+			if (y >= GROUND_Y) {
 				return 0;
 			} else {
 				// tower or tier 3 chimney C are both 3 tiles
@@ -386,7 +370,7 @@ bool IsOpenAirTile(u8 x, u8 y) {
 }
 
 bool IsTopOfBuilding(u8 x, u8 y) {
-	return (y >= ScreenYToWorldY(DEFAULT_GROUND_SCREEN_LEVEL) ||
+	return (y >= GROUND_Y ||
 			main_vram[y][x] == TILE_TOWER_ROOF_A ||
 			main_vram[y][x] == TILE_FRAME_NW_A ||
 			main_vram[y][x] == TILE_FRAME_NE_A ||
@@ -635,82 +619,7 @@ void GameOverCheck() {
 	}
 }
 
-void SpawnEnemy() {
-	u8 index_to_spawn = 0;
-	u8 enemy_counter = 0;
-	u8 enemies_this_wave = pgm_read_byte(&waves[current_wave][0]);
-
-	// have we already spawned all the enemies this wave?
-	if(wave_enemies_spawned >= enemies_this_wave) {
-		return;
-	}
-
-	// determine next enemy type to spawn
-	for (u8 i = 1; i < 15; i++) {
-
-		u8 this_enemy_count = pgm_read_byte(&waves[current_wave][i]);
-		enemy_counter += this_enemy_count;
-
-		if (wave_enemies_spawned < enemy_counter) {
-			index_to_spawn = i;
-			break;
-		}
-	}
-	if (index_to_spawn == 0) {
-		return; // shouldn't happen, this would indicate no enemies defined this wave
-	}
-
-	// determine a free enemy slot to regenerate
-	u8 new_enemy_index = 255;
-	for (u8 i = 0; i < MAX_ENEMY_COUNT; i++) {
-		if (enemy[i].health == 0) {
-			new_enemy_index = i;
-			break;
-		}
-	}
-	if (new_enemy_index == 255) {
-		return; // shouldn't happen, no enemy slots available
-	}
-
-	switch(index_to_spawn) {
-		case 1: //	Enemy walker 1
-			enemy[new_enemy_index].health = 5;
-			enemy[new_enemy_index].speed_lag = 5;
-			enemy[new_enemy_index].anim_lag = 8;
-			enemy[new_enemy_index].x = 0;
-			enemy[new_enemy_index].y = m72_ypos + TILE_HEIGHT; // ground level
-			enemy[new_enemy_index].sprite.off    = ((u16)&walker01_sprite_anim_data) & SPRITE_UNMIRRORED;
-			enemy[new_enemy_index].original_off  = enemy[new_enemy_index].sprite.off;
-			enemy[new_enemy_index].sprite.height = 8U;
-			enemy[new_enemy_index].sprite.col1   = 0x13U;
-			enemy[new_enemy_index].sprite.col2   = 0x47U;
-			enemy[new_enemy_index].sprite.col3   = 0x7FU;
-			enemy[new_enemy_index].anim_frame_count = 2;
-			break;
-
-	}
-
-	//	Enemy walker 2,
-	//	Enemy walker 3,
-	//	Enemy walker boss 1,
-	//	Enemy walker boss 2,
-	//	Enemy flyer 1,	
-	//	Enemy flyer 2,
-	//	Enemy flyer 3,
-	//	Enemy flyer 4,
-	//	Enemy flyer 5,
-	//	Enemy flyer 6,	
-	//	Enemy flyer boss 1,
-	//	Enemy flyer boss 2,
-	//	Enemy flyer boss 3
-
-	// Set our sprite metadata so we can easily tell what type of enemy a sprite is
-	enemy[new_enemy_index].type = index_to_spawn;
-	wave_enemies_spawned++;
-
-}
-
-void DestroyEnemy(u8 enemy_index) {
+void DestroyEnemyAndCheckForNextWave(u8 enemy_index) {
 	enemy[enemy_index].health = 0;
 	enemy[enemy_index].sprite.height = 0;
 	enemy[enemy_index].x = 0;
@@ -749,7 +658,7 @@ void WaveThink() {
 	if (wave_countdown == 0) { // wave counter is reset after last enemy is destroyed this wave
 		spawn_countdown--;
 		if (spawn_countdown == 0) {
-			SpawnEnemy();
+			TryToSpawnEnemy(); // enemies.c
 			spawn_countdown = TIME_BETWEEN_ENEMIES;
 		}
 	} else {
@@ -768,7 +677,7 @@ void WaveThink() {
 
 			// goal check
 			if (enemy[i].x >= (BG_WIDTH - 1) * TILE_WIDTH) {
-				DestroyEnemy(i);
+				DestroyEnemyAndCheckForNextWave(i); // enemies.c
 				lives--;
 				RefreshTopBar();
 				break;

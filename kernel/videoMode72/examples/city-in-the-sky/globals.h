@@ -1,3 +1,5 @@
+#pragma once
+#include <uzebox.h>
 
 #define JUST_ABOVE(Y) (Y) + 5
 #define JUST_BELOW(Y) (Y) - 1
@@ -6,10 +8,9 @@
 
 /* Background */
 #define BG_WIDTH 32
-#define BG_HEIGHT 32
+#define BG_HEIGHT SCREEN_TILES_V
 #define BORDER_SIZE 2 // "no-bg" border on left and right
-#define GROUND_Y 4
-#define DEFAULT_GROUND_SCREEN_LEVEL (GROUND_Y + 4) * TILE_HEIGHT
+#define GROUND_Y 21
 
 /* Tiles */
 #define TILE_SKY_A 0
@@ -59,3 +60,19 @@
 #define TIME_BETWEEN_WAVES 155
 #define TIME_BETWEEN_ENEMIES 150
 #define MAX_BULLET_COUNT 64
+#define ENEMY_ROW_
+
+/* Global variables */
+extern u8 current_wave;
+extern u8 wave_countdown;
+extern u8 spawn_countdown;
+extern u8 wave_enemies_spawned;
+extern int player_money[];
+
+/* UTILS */
+
+u8 WorldXToScreenX(u8 x);
+u8 ScreenXToWorldX(u8 x);
+u8 ScreenYToWorldY(u8 y);
+u8 WorldYToScreenY(u8 y);
+void RefreshTopBar();

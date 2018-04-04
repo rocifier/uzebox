@@ -17,8 +17,8 @@ city-in-the-sky.o: main.c \
   ../../../../kernel/uzebox.h ../../../../kernel/defines.h \
   ../../../../kernel/videoMode72/videoMode72.def.h \
   ../../../../kernel/kernel.h \
-  ../../../../kernel/videoMode72/videoMode72.h sprites.h enemies.h \
-  waves.h main.h
+  ../../../../kernel/videoMode72/videoMode72.h globals.h sprites.h \
+  enemies.h waves.h
 
 c:\winavr-20100110\bin\../lib/gcc/avr/4.3.3/include/stdbool.h:
 
@@ -60,10 +60,10 @@ c:/winavr-20100110/lib/gcc/../../avr/include/avr/pgmspace.h:
 
 ../../../../kernel/videoMode72/videoMode72.h:
 
+globals.h:
+
 sprites.h:
 
 enemies.h:
 
 waves.h:
-
-main.h:
