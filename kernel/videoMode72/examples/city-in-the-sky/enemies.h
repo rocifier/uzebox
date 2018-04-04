@@ -17,7 +17,7 @@ typedef struct {
     u8 x;
     u8 y;
 
-    int health;
+    u16 health;
     u8 type;
     u16 original_off;
     u8 speed_lag;
@@ -32,7 +32,7 @@ typedef struct {
 // 0-7 top zone
 // 8-15 mid zone
 // 16-23 ground zone
-static enemy_t enemy[MAX_ENEMY_COUNT];
+extern enemy_t enemy[MAX_ENEMY_COUNT];
 
 // function declarations
 void InitEnemies();

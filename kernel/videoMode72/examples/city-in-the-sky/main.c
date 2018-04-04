@@ -665,8 +665,14 @@ void WaveThink() {
 		wave_countdown--;
 	}
 
+			player_money[0] = enemy[16].health;
+			RefreshTopBar();
+			
 	for (u8 i = 0; i < MAX_ENEMY_COUNT; i++) {
 		if (enemy[i].health > 0) {
+
+			player_money[0] = i;
+			RefreshTopBar();
 
 			// velocity
 			enemy[i].speed_lag_count++;

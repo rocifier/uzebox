@@ -5,6 +5,8 @@
 #include "waves.h"
 #include "sprites.h"
 
+enemy_t enemy[MAX_ENEMY_COUNT];
+
 void InitEnemies() {
     // enemy zones for rendering Y:
     // 0-7 top zone
@@ -81,13 +83,16 @@ void TryToSpawnEnemy() {
 		return;
 	}
 
+	player_money[1] = new_enemy_index;
+	RefreshTopBar();
+
 	switch(index_to_spawn) {
 		case 1: //	Enemy walker 1
 			enemy[new_enemy_index].health = 5;
 			enemy[new_enemy_index].speed_lag = 5;
 			enemy[new_enemy_index].anim_lag = 8;
 			enemy[new_enemy_index].x = 0;
-			enemy[new_enemy_index].y = WorldYToScreenY(GROUND_Y - 1);
+			enemy[new_enemy_index].y = WorldYToScreenY(GROUND_Y - 3);
 			enemy[new_enemy_index].sprite.off    = ((u16)&walker01_sprite_anim_data) & SPRITE_UNMIRRORED;
 			enemy[new_enemy_index].original_off  = enemy[new_enemy_index].sprite.off;
 			enemy[new_enemy_index].sprite.height = 8U;
@@ -96,7 +101,9 @@ void TryToSpawnEnemy() {
 			enemy[new_enemy_index].sprite.col3   = 0x7FU;
 			enemy[new_enemy_index].anim_frame_count = 2;
 			break;
-
+			
+		default:
+			return;
 	}
 
 	//	Enemy walker 2,
