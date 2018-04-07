@@ -32,7 +32,7 @@ typedef struct {
 // 0-7 top zone
 // 8-15 mid zone
 // 16-23 ground zone
-extern enemy_t enemy[MAX_ENEMY_COUNT];
+extern enemy_t enemy[];
 
 // function declarations
 void InitEnemies();

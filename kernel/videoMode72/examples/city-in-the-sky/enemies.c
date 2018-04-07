@@ -17,15 +17,17 @@ void InitEnemies() {
 		enemy[i].type = 0;
 		enemy[i].health = 0;
 		enemy[i].sprite.height = 0;
-		enemy[i].sprite.off = 0;
-		enemy[i].sprite.xpos = 0;
-		enemy[i].sprite.ypos = WorldYToScreenY(0);
+		enemy[i].sprite.off = NULL;
+		enemy[i].sprite.xpos = 255;
+		enemy[i].sprite.ypos = 180;
     }
     // link higher zones to render the next zone down
     for (i = 0; i < 8; i++) {
 		enemy[i].sprite.next = &enemy[i + 8].sprite;
 		enemy[i + 8].sprite.next = &enemy[i + 16].sprite;
+		enemy[i + 8].sprite.ypos = 128;
 		enemy[i + 16].sprite.next = NULL;
+		enemy[i + 16].sprite.ypos = 64;
         sprites[SPRITE_INDEX_ENEMIES + i] = &enemy[i].sprite;
     }
 }
@@ -83,16 +85,13 @@ void TryToSpawnEnemy() {
 		return;
 	}
 
-	player_money[1] = new_enemy_index;
-	RefreshTopBar();
-
 	switch(index_to_spawn) {
 		case 1: //	Enemy walker 1
 			enemy[new_enemy_index].health = 5;
 			enemy[new_enemy_index].speed_lag = 5;
 			enemy[new_enemy_index].anim_lag = 8;
 			enemy[new_enemy_index].x = 0;
-			enemy[new_enemy_index].y = WorldYToScreenY(GROUND_Y - 3);
+			enemy[new_enemy_index].y = 64; //WorldYToScreenY(GROUND_Y - 1);
 			enemy[new_enemy_index].sprite.off    = ((u16)&walker01_sprite_anim_data) & SPRITE_UNMIRRORED;
 			enemy[new_enemy_index].original_off  = enemy[new_enemy_index].sprite.off;
 			enemy[new_enemy_index].sprite.height = 8U;
